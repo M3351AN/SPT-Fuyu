@@ -29,13 +29,50 @@ void CreateRegistryKeyAndFiles(const std::string& installLocation) {
     CreateDirectoryA(installLocation.c_str(), NULL);
     CreateDirectoryA((installLocation+ "\\BattlEye").c_str(), NULL);
     std::ofstream(installLocation + "\\BattlEye\\BEClient_x64.dll").close();
+	//This file isn't needed to be created, as it's not exist in EFT live
     //std::ofstream(installLocation + "\\BattlEye\\BEService_x64.dll").close();
     std::ofstream(installLocation + "\\ConsistencyInfo").close();
     std::ofstream(installLocation + "\\Uninstall.exe").close();
     std::ofstream(installLocation + "\\UnityCrashHandler64.exe").close();
     std::ofstream(installLocation + "\\WinPixEventRuntime.dll").close();
 }
+bool Validate() {//copy from SPT Source
+    std::wstring registryPath = L"Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\EscapeFromTarkov";
+    int v0 = 0;
 
+    try {
+        HKEY hKey;
+        if (RegOpenKeyExW(HKEY_LOCAL_MACHINE, registryPath.c_str(), 0, KEY_READ, &hKey) == ERROR_SUCCESS) {
+            wchar_t installLocation[512];
+            DWORD bufferSize = sizeof(installLocation);
+            if (RegQueryValueExW(hKey, L"InstallLocation", nullptr, nullptr, (LPBYTE)installLocation, &bufferSize) == ERROR_SUCCESS) {
+                std::wstring v2 = installLocation;
+                std::vector<std::filesystem::path> v4 = {
+                    v2,
+                    v2 + L"\\BattlEye\\BEClient_x64.dll",
+                    v2 + L"\\BattlEye\\BEService_x64.dll",
+                    v2 + L"\\ConsistencyInfo",
+                    v2 + L"\\Uninstall.exe",
+                    v2 + L"\\UnityCrashHandler64.exe"
+                };
+
+                v0 = static_cast<int>(v4.size()) - 1;
+
+                for (const auto& value : v4) {
+                    if (std::filesystem::exists(value)) {
+                        --v0;
+                    }
+                }
+            }
+            RegCloseKey(hKey);
+        }
+    }
+    catch (...) {
+        v0 = -1;
+    }
+
+    return v0 == 0;
+}
 int main(int argc, char* argv[]) {
     SetConsoleTitle(L"SPT Fuyu");
 
@@ -63,8 +100,10 @@ int main(int argc, char* argv[]) {
 
     std::string installLocation = filePath;
     CreateRegistryKeyAndFiles(installLocation);
-
-    std::cout << (isChinese ? "验证执行成功." : "Validation Bypass Succeeded.") << std::endl;
+    if (Validate())
+        std::cout << (isChinese ? "验证执行成功." : "Validation Bypass Succeeded.") << std::endl;
+    else
+        std::cout << (isChinese ? "验证执行失败，未知错误." : "Validation Bypass Failed. Unknown Error") << std::endl;
     system("pause");
     return 0;
 }
