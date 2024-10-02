@@ -10,8 +10,13 @@
 
 #pragma comment(lib, "shlwapi.lib")
 
+bool IsChineseLanguage() {
+    LANGID langId = GetUserDefaultUILanguage();
+    return (langId == 0x0804 || langId == 0x0404); // 简体中文或繁体中文
+}
+
 void CreateRegistryKeyAndFiles(const std::string& installLocation) {
-    // 创建注册表项
+    // 创建注册表项 Create a registry key
     HKEY hKey;
     const char* subKey = "Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\EscapeFromTarkov";
 
@@ -20,7 +25,7 @@ void CreateRegistryKeyAndFiles(const std::string& installLocation) {
         RegCloseKey(hKey);
     }
 
-    // 创建目录和文件
+    // 创建目录和文件 Creating Directories and Files
     CreateDirectoryA(installLocation.c_str(), NULL);
     CreateDirectoryA((installLocation+ "\\BattlEye").c_str(), NULL);
     std::ofstream(installLocation + "\\BattlEye\\BEClient_x64.dll").close();
@@ -34,8 +39,11 @@ void CreateRegistryKeyAndFiles(const std::string& installLocation) {
 int main(int argc, char* argv[]) {
     SetConsoleTitle(L"SPT Fuyu");
 
+    // 判断是否为中文语言 Determine if system language is Chinese
+    bool isChinese = IsChineseLanguage();
+
     if (argc != 2) {
-        std::cerr << "请拖入验证文件存放文件夹。" << std::endl;
+        std::cerr << (isChinese ? "请拖入验证文件存放文件夹。" : "Please drag and drop the folder that you want verification files storage at." )<< std::endl;
         system("pause");
         return 1;
     }
@@ -43,12 +51,12 @@ int main(int argc, char* argv[]) {
     std::string filePath = argv[1];
 
     if (!std::filesystem::is_directory(filePath)) {
-        std::cerr << "错误：拖入的不是文件夹。" << std::endl;
+        std::cerr << (isChinese ? "错误：拖入的不是文件夹。" : "Error: The item dragged in is not a folder.") << std::endl;
 		system("pause");
         return 1;
     }
     if (std::filesystem::directory_iterator(filePath) != std::filesystem::end(std::filesystem::directory_iterator())) {
-        std::cerr << "错误：拖入的文件夹不是空的。" << std::endl;
+        std::cerr << (isChinese ? "错误：拖入的文件夹不是空的。" : "Error: The folder dragged in is not empty.") << std::endl;
         system("pause");
         return 1;
     }
@@ -56,7 +64,7 @@ int main(int argc, char* argv[]) {
     std::string installLocation = filePath;
     CreateRegistryKeyAndFiles(installLocation);
 
-    std::cout << "验证执行成功." << std::endl;
+    std::cout << (isChinese ? "验证执行成功." : "Validation Bypass Succeeded.") << std::endl;
     system("pause");
     return 0;
 }
