@@ -45,6 +45,11 @@ int main(int argc, char* argv[]) {
 		system("pause");
         return 1;
     }
+    if (std::filesystem::directory_iterator(filePath) != std::filesystem::end(std::filesystem::directory_iterator())) {
+        std::cerr << "错误：拖入的文件夹不是空的。" << std::endl;
+        system("pause");
+        return 1;
+    }
 
     std::string installLocation = filePath;
     CreateRegistryKeyAndFiles(installLocation);
