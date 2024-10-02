@@ -1,10 +1,10 @@
 # SPT Fuyu
-
+[简体中文](README.md)
 ## What is SPT Fuyu?
 
 ![download](https://github.com/user-attachments/assets/f1ac2e38-3787-46f1-baf9-1dc885cc7066)
 
-SPT-Fuyu is a tool developed to quickly bypass EFT install validate of SPT while u have not install EFT from BSG
+SPT Fuyu is a tool developed to quickly bypass EFT install validate of SPT while u have not install EFT from BSG
 
 Support latest version of SPT! (Tested in SPT 3.9.8)
 
@@ -28,6 +28,6 @@ Support latest version of SPT! (Tested in SPT 3.9.8)
 
 SPT Fuyu is just a software that not affiliated with SPT / Battlestate Games Ltd. in any way.
 
-This software is produced for learning purposes only and is not intended to promote cracked software or destroy other people's intellectual property rights.
+This software is produced for educational purposes only and is not intended to promote cracked software or destroy other people's intellectual property rights.
 
 MIT licenced
