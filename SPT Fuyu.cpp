@@ -22,10 +22,11 @@ void CreateRegistryKeyAndFiles(const std::string& installLocation) {
     // 创建目录和文件
     CreateDirectoryA(installLocation.c_str(), NULL);
     std::ofstream(installLocation + "\\BattlEye\\BEClient_x64.dll").close();
-    std::ofstream(installLocation + "\\BattlEye\\BEService_x64.dll").close();
+    //std::ofstream(installLocation + "\\BattlEye\\BEService_x64.dll").close();
     std::ofstream(installLocation + "\\ConsistencyInfo").close();
     std::ofstream(installLocation + "\\Uninstall.exe").close();
     std::ofstream(installLocation + "\\UnityCrashHandler64.exe").close();
+    std::ofstream(installLocation + "\\WinPixEventRuntime.dll").close();
 }
 
 int main(int argc, char* argv[]) {
