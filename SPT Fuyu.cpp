@@ -6,6 +6,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <filesystem>
 
 #pragma comment(lib, "shlwapi.lib")
 
@@ -21,6 +22,7 @@ void CreateRegistryKeyAndFiles(const std::string& installLocation) {
 
     // 创建目录和文件
     CreateDirectoryA(installLocation.c_str(), NULL);
+    CreateDirectoryA((installLocation+ "\\BattlEye").c_str(), NULL);
     std::ofstream(installLocation + "\\BattlEye\\BEClient_x64.dll").close();
     //std::ofstream(installLocation + "\\BattlEye\\BEService_x64.dll").close();
     std::ofstream(installLocation + "\\ConsistencyInfo").close();
@@ -31,21 +33,20 @@ void CreateRegistryKeyAndFiles(const std::string& installLocation) {
 
 int main(int argc, char* argv[]) {
     if (argc != 2) {
-        std::cerr << "请拖入EscapeFromTarkov.exe文件。" << std::endl;
+        std::cerr << "请拖入验证文件存放文件夹" << std::endl;
         system("pause");
         return 1;
     }
 
     std::string filePath = argv[1];
-    std::string fileName = PathFindFileNameA(filePath.c_str());
 
-    if (fileName != "EscapeFromTarkov.exe") {
-        std::cerr << "错误：拖入的文件不是EscapeFromTarkov.exe。" << std::endl;
+    if (!std::filesystem::is_directory(filePath)) {
+        std::cerr << "错误：拖入的不是文件夹。" << std::endl;
 		system("pause");
         return 1;
     }
 
-    std::string installLocation = filePath.substr(0, filePath.find_last_of("\\/"));
+    std::string installLocation = filePath;
     CreateRegistryKeyAndFiles(installLocation);
 
     std::cout << "验证执行成功." << std::endl;
