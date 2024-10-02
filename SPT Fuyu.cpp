@@ -32,8 +32,10 @@ void CreateRegistryKeyAndFiles(const std::string& installLocation) {
 }
 
 int main(int argc, char* argv[]) {
+    SetConsoleTitle(L"SPT Fuyu");
+
     if (argc != 2) {
-        std::cerr << "请拖入验证文件存放文件夹" << std::endl;
+        std::cerr << "请拖入验证文件存放文件夹。" << std::endl;
         system("pause");
         return 1;
     }
