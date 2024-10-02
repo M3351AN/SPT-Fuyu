@@ -1,5 +1,5 @@
 # SPT Fuyu
-[简体中文](README.md)
+[简体中文](README_CN.md)
 ## What is SPT Fuyu?
 
 ![download](https://github.com/user-attachments/assets/f1ac2e38-3787-46f1-baf9-1dc885cc7066)
