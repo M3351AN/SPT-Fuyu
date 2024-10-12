@@ -24,7 +24,7 @@ Support latest version of SPT! (Tested in SPT 3.9.8)
 ### method 2
 1.Put the exe at path that want to store the files required for verification
 
-2.When "No folder path dragged in. Do you want to store the verification files in current directory? (y/n): " shown, press "y" and enter key
+2.Execute SPT Fuyu.When "No folder path dragged in. Do you want to store the verification files in current directory? (y/n): " shown, press "y" and then enter key
 
 3.SPT Fuyu automatically performs the steps required for verification
 
