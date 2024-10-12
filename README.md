@@ -37,8 +37,9 @@ SPT Fuyu will check if you already passed SPT's EFT live verification. If you al
 [SPT](https://dev.sp-tarkov.com/)
 
 ## Declaration
+"SPT Fuyu" mentioned here refers only to this project and has nothing to do with any other projects, even if the names are the same or similar.
 
-SPT Fuyu is just a software that not affiliated with SPT / Battlestate Games Ltd. in any way.
+SPT Fuyu is just a software that not affiliated with SPT / Battlestate Games Ltd. and any other project, organization, individual in any way.
 
 This software is produced for educational purposes only and is not intended to promote cracked software or destroy other people's intellectual property rights.
 
