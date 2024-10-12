@@ -34,7 +34,7 @@ SPT Fuyu会在运行时检查是否已通过SPT正版验证，如果您已经安
 
 ## 致谢
 
-[SPT](https://dev.sp-tarkov.com/)
+[SPT Development Repo](https://dev.sp-tarkov.com/)
 
 ## 声明
 此处所指的"SPT Fuyu"仅指代本项目，与其他任何项目无关，即便名字相同或类似
