@@ -37,7 +37,9 @@ SPT Fuyu会在运行时检查是否已通过SPT正版验证，如果您已经安
 [SPT](https://dev.sp-tarkov.com/)
 
 ## 声明
-SPT Fuyu 只是一款与 SPT项目 / Battlestate Games Ltd. 公司 在任何情况、任何形式下都无关的软件
+此处所指的"SPT Fuyu"仅指代本项目，与其他任何项目无关，即便名字相同或类似
+
+SPT Fuyu 只是一款与 SPT项目 / Battlestate Games Ltd. 公司 以及其他任何项目、组织、个人 在任何情况、任何形式下都无关的软件
 
 该软件为教育目的开发，仅供学习，不为使用者宣传破解软件、破坏他人知识产权的行为背书
 
