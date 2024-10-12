@@ -34,7 +34,7 @@ SPT Fuyu will check if you already passed SPT's EFT live verification. If you al
 
 ## Credits
 
-[SPT](https://dev.sp-tarkov.com/)
+[SPT Development Repo](https://dev.sp-tarkov.com/)
 
 ## Declaration
 "SPT Fuyu" mentioned here refers only to this project and has nothing to do with any other projects, even if the names are the same or similar.
