@@ -4,7 +4,7 @@
 
 ![download](https://github.com/user-attachments/assets/f1ac2e38-3787-46f1-baf9-1dc885cc7066)
 
-SPT Fuyu 是一款用于在没有从BSG安装塔科夫的情况下快速跳过SPT启动器正版塔科夫安装验证的工具
+SPT Fuyu 是一款用于在没有从BSG安装塔科夫的情况下快速跳过SPT启动器在线版塔科夫安装验证的工具
 
 支持最新版本的SPT! (在 SPT 3.9.8 经过测试)
 
