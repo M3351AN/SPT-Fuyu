@@ -14,11 +14,23 @@ Support latest version of SPT! (Tested in SPT 3.9.8)
 
 ## How to use?
 
+### method 1
 1.Create a folder in the location you want to store the files required for verification
 
 2.Drag the folder created in the previous step onto the exe. If you're more comfortable using the CLI, just execute the exe in the terminal and pass in the path to the file.
 
 3.SPT Fuyu automatically performs the steps required for verification
+
+### method 2
+1.Put the exe at path that want to store the files required for verification
+
+2.When "No folder path dragged in. Do you want to store the verification files in current directory? (y/n): " shown, press "y" and enter key
+
+3.SPT Fuyu automatically performs the steps required for verification
+
+### addition
+
+SPT Fuyu will check if you already passed SPT's EFT live verification. If you already installed EFT live version, do not using SPY Fuyu to bypass the verification (and actually you do not have to).
 
 ## Credits
 
