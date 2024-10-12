@@ -120,6 +120,9 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
+      <Optimization>MinSpace</Optimization>
+      <OmitFramePointers>true</OmitFramePointers>
+      <StringPooling>true</StringPooling>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -129,7 +132,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="SPT Fuyu.cpp" />
+    <ClCompile Include="SPT Fuyu.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h" />

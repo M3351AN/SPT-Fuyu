@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="SPT Fuyu.cpp">
+    <ClCompile Include="SPT Fuyu.cc">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
