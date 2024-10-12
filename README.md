@@ -43,4 +43,4 @@ SPT Fuyu is just a software that not affiliated with SPT / Battlestate Games Ltd
 
 This software is produced for educational purposes only and is not intended to promote cracked software or destroy other people's intellectual property rights.
 
-MIT licenced
+All content of SPT Fuyu is subject to the [MIT License Kai IV](https://github.com/M3351AN/SPT-Fuyu/blob/main/LICENSE)
