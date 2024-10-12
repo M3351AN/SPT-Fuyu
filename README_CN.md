@@ -43,4 +43,4 @@ SPT Fuyu 只是一款与 SPT项目 / Battlestate Games Ltd. 公司 以及其他�
 
 该软件为教育目的开发，仅供学习，不为使用者宣传破解软件、破坏他人知识产权的行为背书
 
-SPT Fuyu的所有内容仅限在[MIT License Kai IV](https://github.com/M3351AN/SPT-Fuyu/blob/main/LICENSE)许可约束下使用
+SPT Fuyu的所有内容仅限在[TOSSRCU License](https://github.com/M3351AN/SPT-Fuyu/blob/main/LICENSE)许可约束下使用
