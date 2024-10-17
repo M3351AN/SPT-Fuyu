@@ -28,6 +28,8 @@ Support latest version of SPT! (Tested in SPT 3.9.8)
 
 3.SPT Fuyu automatically performs the steps required for verification
 
+[![How to Use](https://res.cloudinary.com/marcomontalbano/image/upload/v1729199697/video_to_markdown/images/youtube--N-wXnwR-FiY-c05b58ac6eb4c4700831b2b3070cd403.jpg)](https://www.youtube.com/watch?v=N-wXnwR-FiY "How to Use")
+
 ### addition
 
 SPT Fuyu will check if you already passed SPT's EFT live verification. If you already installed EFT live version, do not using SPY Fuyu to bypass the verification (and actually you do not have to).
