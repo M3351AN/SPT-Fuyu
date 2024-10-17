@@ -28,6 +28,8 @@ SPT Fuyu 是一款用于在没有从BSG安装塔科夫的情况下快速跳过SP
 
 3.SPT Fuyu会自动完成验证步骤
 
+[![How to Use](https://res.cloudinary.com/marcomontalbano/image/upload/v1729199697/video_to_markdown/images/youtube--N-wXnwR-FiY-c05b58ac6eb4c4700831b2b3070cd403.jpg)](https://www.youtube.com/watch?v=N-wXnwR-FiY "How to Use")
+
 ### 附注
 SPT Fuyu会在运行时检查是否已通过SPT正版验证，如果您已经安装在线版逃离塔科夫，请不要执行本程序（您也没有必要通过本程序进行正版验证）
 
