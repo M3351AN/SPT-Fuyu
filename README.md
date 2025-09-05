@@ -15,16 +15,21 @@ Theoretically support latest version of SPT! (last tested in SPT 3.9.8)
 ## How to use?
 
 ### method 1
+1.Run SPT_Fuyu.exe as administrator
+
+2.SPT Fuyu automatically performs the steps required for verification, the files required for verification would be stored under Documents path
+
+### method 2
 1.Create a folder in the location you want to store the files required for verification
 
 2.Drag the folder created in the previous step onto the exe. If you're more comfortable using the CLI, just execute the exe in the terminal and pass in the path to the file.
 
 3.SPT Fuyu automatically performs the steps required for verification
 
-### method 2
+### method 3
 1.Put the exe at path that want to store the files required for verification
 
-2.Execute SPT Fuyu.When "No folder path dragged in. Do you want to store the verification files in current directory? (y/n): " shown, press "y" and then enter key
+2.Execute SPT Fuyu with command "--here" (ex. "./SPT_Fuyu.exe --here")
 
 3.SPT Fuyu automatically performs the steps required for verification
 
