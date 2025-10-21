@@ -2,7 +2,6 @@ name: Sync GitHub Releases to Gitee
 on:
   release:
     types: [published]
-  workflow_dispatch: 
 jobs:
   sync:
     runs-on: ubuntu-latest
