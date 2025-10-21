@@ -1,45 +1,63 @@
-name: Sync Latest Release to CDN Repo
+name: Sync Release Assets to CDN
 
 on:
   release:
     types: [published]
-  workflow_dispatch:
+
+env:
+  SOURCE_REPO: ${{ github.repository }}
+  CDN_REPO: "M3351AN/cdn"
+  CDN_BRANCH: "main"
 
 jobs:
-  sync:
+  sync-assets:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
     steps:
-      - name: Checkout CDN repo
+      - name: Checkout Source Repo
+        uses: actions/checkout@v4
+
+      - name: Get Release Tag
+        id: get_release_tag
+        run: echo "tag_name=${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
+
+      - name: Set Target Paths
+        id: set_paths
+        run: |
+          SOURCE_REPO_NAME="${GITHUB_REPOSITORY#*/}"
+          echo "source_repo_name=$SOURCE_REPO_NAME" >> $GITHUB_OUTPUT
+          echo "target_path=$SOURCE_REPO_NAME/${{ steps.get_release_tag.outputs.tag_name }}" >> $GITHUB_OUTPUT
+
+      - name: Checkout CDN Repo
         uses: actions/checkout@v4
         with:
-          repository: M3351AN/cdn
+          repository: ${{ env.CDN_REPO }}
           token: ${{ secrets.CDN_REPO_TOKEN }}
-          path: cdn
+          ref: ${{ env.CDN_BRANCH }}
+          path: cdn-repo
 
-      - name: Fetch latest release info
+      - name: Create Target Directory in CDN
         run: |
-          curl -s -H "Accept: application/vnd.github+json" \
-               -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-               "https://api.github.com/repos/${{ github.repository }}/releases/latest" \
-               > release.json
+          mkdir -p "cdn-repo/${{ steps.set_paths.outputs.target_path }}"
 
-          cat release.json
-
-      - name: Download latest release assets
+      - name: Download and Copy Release Assets
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # 用于API调用，默认可读当前仓库
         run: |
-          repo_name=${{ github.event.repository.name }}
-          tag=$(jq -r '.tag_name' release.json)
-          mkdir -p "cdn/$repo_name/$tag"
+          cd "cdn-repo/${{ steps.set_paths.outputs.target_path }}"
 
-          for url in $(jq -r '.assets[]' release.json); do
-            wget -q -P "cdn/$repo_name/$tag" "$url"
-          done
-
-      - name: Commit and Push to CDN repo
+          echo "Downloading assets for release ${{ github.event.release.tag_name }}"
+          
+          ASSETS_URL="${{ github.event.release.assets_url }}"
+          
+          curl -s -H "Authorization: token $GITHUB_TOKEN" $ASSETS_URL | jq -r '.[] | select(.url != null) | .browser_download_url' | xargs -n1 curl -L -O -H "Authorization: token $GITHUB_TOKEN"
+      - name: Commit and Push to CDN Repo
         run: |
-          cd cdn
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          cd cdn-repo
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
           git add .
-          git commit -m "Sync latest release ${{ github.event.release.tag_name }} from ${{ github.event.repository.name }}" || echo "No changes to commit"
-          git push
+          git commit -m "Add assets for ${{ steps.set_paths.outputs.source_repo_name }} release ${{ steps.get_release_tag.outputs.tag_name }}"
+          git push "https://${{ github.actor }}:${{ secrets.CDN_REPO_TOKEN }}@github.com/${{ env.CDN_REPO }}.git" HEAD:${{ env.CDN_BRANCH }}
