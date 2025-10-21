@@ -1,0 +1,35 @@
+name: Sync Release Assets to CDN Repo
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout CDN repo
+        uses: actions/checkout@v4
+        with:
+          repository: M3351AN/cdn
+          token: ${{ secrets.CDN_REPO_TOKEN }}
+          path: cdn
+
+      - name: Download Release Assets
+        run: |
+          mkdir -p "cdn/${{ github.event.repository.name }}/${{ github.event.release.tag_name }}"
+          cd "cdn/${{ github.event.repository.name }}/${{ github.event.release.tag_name }}"
+
+          for asset in $(echo '${{ toJson(github.event.release.assets) }}' | jq -r '.[].browser_download_url'); do
+            echo "Downloading $asset"
+            wget -q "$asset"
+          done
+
+      - name: Commit and Push to CDN repo
+        run: |
+          cd cdn
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "Add release ${{ github.event.release.tag_name }} from ${{ github.event.repository.name }}"
+          git push
