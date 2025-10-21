@@ -2,38 +2,39 @@ name: Sync GitHub Releases to Gitee
 on:
   release:
     types: [published]
+
 jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Install SSH Client
-        run: sudo apt-get install -y openssh-client
-
-      - name: Configure SSH
+      - name: Create Gitee Release
+        id: create_release
         run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.GITEE_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan gitee.com >> ~/.ssh/known_hosts
-        env:
-          GITEE_SSH_PRIVATE_KEY: ${{ secrets.GITEE_SSH_PRIVATE_KEY }}
+          response=$(curl -s -X POST \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"access_token\": \"${{ secrets.GITEE_ACCESS_TOKEN }}\",
+              \"tag_name\": \"${{ github.event.release.tag_name }}\",
+              \"name\": \"${{ github.event.release.name }}\",
+              \"body\": \"${{ github.event.release.body }}\"
+            }" \
+            https://gitee.com/api/v5/repos/TEIKUMO/SPT-Fuyu/releases)
 
-      - name: Clone Gitee Repository
-        run: git clone git@gitee.com:TEIKUMO/SPT-Fuyu.git
+          echo "API response: $response"
+          release_id=$(echo $response | jq -r '.id')
+          echo "release_id=$release_id" >> $GITHUB_OUTPUT
 
-      - name: Sync Release Assets
+      - name: Upload Release Assets to Gitee
+        if: steps.create_release.outputs.release_id != ''
         run: |
-          cd SPT-Fuyu
-          # 下载GitHub Release文件（示例：通过API或直接引用URL）
-          # 假设已知文件URL为 ${{ github.event.release.assets[0].browser_download_url }}
-          wget -O asset.zip "${{ github.event.release.assets[0].browser_download_url }}"
-          
-          # 提交到Gitee
-          git config --global user.email "action@github.com"
-          git config --global user.name "GitHub Action"
-          git add .
-          git commit -m "Sync Release: ${{ github.event.release.tag_name }}"
-          git push origin main
+          for asset in $(echo '${{ toJson(github.event.release.assets) }}' | jq -r '.[].browser_download_url'); do
+            echo "Downloading $asset"
+            wget -O asset_file "$asset"
+
+            echo "Uploading to Gitee..."
+            curl -X POST \
+              -H "Content-Type: multipart/form-data" \
+              -F "access_token=${{ secrets.GITEE_ACCESS_TOKEN }}" \
+              -F "file=@asset_file" \
+              https://gitee.com/api/v5/repos/TEIKUMO/SPT-Fuyu/releases/${{ steps.create_release.outputs.release_id }}/attachments
+          done
