@@ -1,0 +1,39 @@
+name: Sync GitHub Releases to Gitee
+on:
+  release:
+    types: [published]
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install SSH Client
+        run: sudo apt-get install -y openssh-client
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.GITEE_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan gitee.com >> ~/.ssh/known_hosts
+        env:
+          GITEE_SSH_PRIVATE_KEY: ${{ secrets.GITEE_SSH_PRIVATE_KEY }}
+
+      - name: Clone Gitee Repository
+        run: git clone git@gitee.com:your_username/your_repo.git
+
+      - name: Sync Release Assets
+        run: |
+          cd your_repo
+          # 下载GitHub Release文件（示例：通过API或直接引用URL）
+          # 假设已知文件URL为 ${{ github.event.release.assets[0].browser_download_url }}
+          wget -O asset.zip "${{ github.event.release.assets[0].browser_download_url }}"
+          
+          # 提交到Gitee
+          git config --global user.email "action@github.com"
+          git config --global user.name "GitHub Action"
+          git add .
+          git commit -m "Sync Release: ${{ github.event.release.tag_name }}"
+          git push origin main
