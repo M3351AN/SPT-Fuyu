@@ -16,15 +16,24 @@ jobs:
           token: ${{ secrets.CDN_REPO_TOKEN }}
           path: cdn
 
+      - name: Fetch latest release info
+        run: |
+          curl -s -H "Accept: application/vnd.github+json" \
+               -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+               "https://api.github.com/repos/${{ github.repository }}/releases/latest" \
+               > release.json
+
+          cat release.json | jq '{tag_name, assets: [.assets[].browser_download_url]}'
+
       - name: Download latest release assets
         run: |
           repo_name=${{ github.event.repository.name }}
-          tag=${{ github.event.release.tag_name }}
+          tag=$(jq -r '.tag_name' release.json)
           mkdir -p "cdn/$repo_name/$tag"
           cd "cdn/$repo_name/$tag"
 
-          for asset in $(echo '${{ toJson(github.event.release.assets) }}' | jq -r '.[].browser_download_url'); do
-            wget -q "$asset"
+          jq -r '.assets[].browser_download_url' ../release.json | while read url; do
+            wget -q "$url"
           done
 
       - name: Commit and Push to CDN repo
@@ -33,5 +42,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add .
-          git commit -m "Sync latest release ${{ github.event.release.tag_name }} from ${{ github.event.repository.name }}" || echo "No changes to commit"
+          git commit -m "Sync latest release from ${{ github.event.repository.name }}" || echo "No changes to commit"
           git push
