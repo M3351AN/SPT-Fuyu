@@ -23,11 +23,11 @@ jobs:
           GITEE_SSH_PRIVATE_KEY: ${{ secrets.GITEE_SSH_PRIVATE_KEY }}
 
       - name: Clone Gitee Repository
-        run: git clone git@gitee.com:your_username/your_repo.git
+        run: git clone git@gitee.com:TEIKUMO/SPT-Fuyu.git
 
       - name: Sync Release Assets
         run: |
-          cd your_repo
+          cd SPT-Fuyu
           # 下载GitHub Release文件（示例：通过API或直接引用URL）
           # 假设已知文件URL为 ${{ github.event.release.assets[0].browser_download_url }}
           wget -O asset.zip "${{ github.event.release.assets[0].browser_download_url }}"
