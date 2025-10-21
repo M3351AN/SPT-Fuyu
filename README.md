@@ -1,5 +1,12 @@
 # SPT Fuyu
 [简体中文](README_CN.md)
+
+## Download
+
+You can get the latest pre-built version in [Release](https://github.com/M3351AN/SPT-Fuyu/releases)
+
+If you are in a region where Github is not accessible, you can download it through the [mirror of CloudFlare CDN proxy](https://cdn.tkm.icu/SPT-Fuyu/).
+
 ## What is SPT Fuyu?
 
 ![download](https://github.com/user-attachments/assets/f1ac2e38-3787-46f1-baf9-1dc885cc7066)
@@ -33,7 +40,7 @@ last tested in SPT 4.0.1
 
 3.SPT Fuyu automatically performs the steps required for verification
 
-[![How to Use](https://res.cloudinary.com/marcomontalbano/image/upload/v1729199697/video_to_markdown/images/youtube--N-wXnwR-FiY-c05b58ac6eb4c4700831b2b3070cd403.jpg)](https://www.youtube.com/watch?v=N-wXnwR-FiY "How to Use")
+<!--[![How to Use](https://res.cloudinary.com/marcomontalbano/image/upload/v1729199697/video_to_markdown/images/youtube--N-wXnwR-FiY-c05b58ac6eb4c4700831b2b3070cd403.jpg)](https://www.youtube.com/watch?v=N-wXnwR-FiY "How to Use")-->
 
 ### addition
 
