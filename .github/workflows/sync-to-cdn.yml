@@ -1,5 +1,4 @@
 name: Sync Release Assets to CDN Repo
-
 on:
   release:
     types: [published]
