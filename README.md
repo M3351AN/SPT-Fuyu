@@ -6,7 +6,8 @@
 
 SPT Fuyu is a tool developed to quickly bypass EFT install validate of SPT while u have not install EFT from BSG
 
-Theoretically support latest version of SPT! (last tested in SPT 3.9.8)
+last tested in SPT 3.9.8
+I have not tested on later versions.
 
 ## Functions
 
