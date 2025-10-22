@@ -149,7 +149,7 @@ int main(int argc, char* argv[]) {
         Exit(1);
       }
     } else {
-      filePath = argv[1];
+      filePath = std::filesystem::path(argv[1]).string();
     }
   }
 
