@@ -1,5 +1,20 @@
-﻿// SPT Fuyu.cpp : 此文件包含 "main" 函数。程序执行将在此处开始并结束。
+﻿// Copyright (c) 2025 渟雲. All rights reserved.
 //
+// Licensed under the TOSSRCU 2025.9 License (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//  https://raw.githubusercontent.com/M3351AN/M3351AN/9e7630a8511b8306c62952ca1a4f1ce0cc5b784a/LICENSE
+//
+// -----------------------------------------------------------------------------
+// File: SPT Fuyu.cc
+// Author: 渟雲(quq[at]outlook.it)
+// Date: 2025-10-22
+//
+// Description:
+//   This file includes functions of SPT Fuyu
+//
+// -----------------------------------------------------------------------------
 
 #include <shlobj.h>
 #include <shlwapi.h>
@@ -22,8 +37,8 @@ void CreateRegistryKeyAndFiles(const std::string& installLocation) {
   // 创建注册表项 Create a registry key
   HKEY hKey;
   const char* subKey =
-      "Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Es"
-      "capeFromTarkov";
+      "Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\"
+      "EscapeFromTarkov";
 
   if (RegCreateKeyExA(HKEY_LOCAL_MACHINE, subKey, 0, NULL, 0, KEY_WRITE, NULL,
                       &hKey, NULL) == ERROR_SUCCESS) {
@@ -93,7 +108,8 @@ void Exit(int ret = 0) {
 
 int main(int argc, char* argv[]) {
   SetConsoleTitle(L"SPT Fuyu");
-
+  // 解决Clang编译导致程序乱码的问题 Fix Clang build console garbled problem
+  SetConsoleOutputCP(65001);
   // 判断是否为中文语言 Determine if system language is Chinese
   bool isChinese = IsChineseLanguage();
   if (Validate()) {  // 检查是否已经通过验证 Check if already passed SPT
