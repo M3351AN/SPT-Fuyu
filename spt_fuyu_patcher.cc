@@ -24,6 +24,7 @@
 #include <expected>
 #include <format>
 #include <filesystem>
+#include <array>
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 namespace build {
