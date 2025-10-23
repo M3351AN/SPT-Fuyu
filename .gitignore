@@ -396,3 +396,59 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+# ================================
+# CMake
+# ================================
+CMakeCache.txt
+CMakeFiles/
+cmake-build-*/
+CMakeScripts/
+Testing/
+Makefile
+CTestTestfile.cmake
+install_manifest.txt
+compile_commands.json
+CPackConfig.cmake
+CPackSourceConfig.cmake
+*_autogen/
+*.cmake.user
+
+# Ninja / Make
+.ninja_deps
+.ninja_log
+
+# ================================
+# CLion / JetBrains IDEs
+# ================================
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# ================================
+*.o
+*.obj
+*.lo
+*.la
+*.al
+*.libs
+*.so
+*.so.*
+*.dylib
+*.dll
+*.exe
+*.out
+*.app
+*.a
+*.lib
+*.pdb
+*.mod
+*.def
+*.exp
+*.log
+*.cache
+*.tmp
+*.swp
+*.DS_Store
+Thumbs.db
