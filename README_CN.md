@@ -42,9 +42,71 @@ SPT Fuyu 是一款用于在没有从BSG安装塔科夫的情况下快速跳过SP
 <!--[![How to Use](https://res.cloudinary.com/marcomontalbano/image/upload/v1729199697/video_to_markdown/images/youtube--N-wXnwR-FiY-c05b58ac6eb4c4700831b2b3070cd403.jpg)](https://www.youtube.com/watch?v=N-wXnwR-FiY "How to Use")-->
 
 
+## 这是怎么实现的？
+
+众所周知，SPT的启动器是一个基于.NET 9的程序，在较早的版本中（4.0.0 以前）基于.NET的更早版本。但它们的原理都是相同的。启动程序时，CLR会接管执行，然后通过JIT编译器，把IL转换成本机机器码。
+
+而我们的修补则从IL入手。
+
+我们首先利用ILSpy工具找到验证函数的代码，它在这里（同样的[源码](https://github.com/sp-tarkov/launcher/blob/master/project/SPT.Launcher.Base/Helpers/ValidationUtil.cs)已经由SPT团队开源，可以看到几乎一致）
+
+<img width="1233" height="855" alt="image" src="https://github.com/user-attachments/assets/3d08890a-eba2-4bd8-b518-5a9ab924565f" />
+
+接着我们切换到IL视图，得到了这样的IL代码
+
+<img width="237" height="115" alt="image" src="https://github.com/user-attachments/assets/4398d50a-0dca-43fd-a0b3-5006904ef7b1" />
+
+它所对应的就是
+```
+07
+16
+FE 01
+2A
+```
+关键在于 `07` 和 `16` 这两个字节，在IL代码中，它们分别代表 ldloc.1 （加载局部变量1）和 ldc.i4.0（压入常量 0），它们组成了相等判断的两项.
+
+如果我们改为
+```
+16
+16
+FE 01
+2A
+```
+得到的就是
+
+<img width="224" height="127" alt="image" src="https://github.com/user-attachments/assets/04413daf-6fbf-4bbc-97b5-904c5a09719f" />
+
+显然，这永远返回“真”
+
+同理，改为
+```
+07
+07
+FE 01
+2A
+```
+
+<img width="256" height="129" alt="image" src="https://github.com/user-attachments/assets/58676453-0dd9-4076-b07e-60740e823a01" />
+
+这一样会永远返回真。
+
+接着就是定位这段字节序列所在的位置，只需要使用随意哪个二进制编辑器进行搜索，但如果直接搜索`07 16 FE 01 2A`我们会得到至少4个结果
+
+<img width="1201" height="126" alt="image" src="https://github.com/user-attachments/assets/1ee7e0bd-a4ec-403d-a6a8-ebcfe0acf586" />
+
+但与此同时，我们注意到在这段代码前还有`leave.s IL_00d4`语句
+
+<img width="467" height="371" alt="image" src="https://github.com/user-attachments/assets/67c93fec-c8ae-4e3a-bd35-eb5d84a653f6" />
+
+因此可以确定图中1C0B942位置，即`DE 00 07 16 FE 01 2A`对应的就是我们要找到的位置，保险起见我们取特征码到`26 15 0B DE 00 07 16 FE 01 2A`
+
+解决问题
+
+
 ## 致谢
 
 [SPT Development Repo](https://dev.sp-tarkov.com/)
+[ILSpy](https://github.com/icsharpcode/ILSpy)
 
 ## 声明
 此处所指的"SPT Fuyu"仅指代本项目，与其他任何项目无关，即便名字相同或类似
