@@ -19,31 +19,27 @@ SPT Fuyu 是一款用于在没有从BSG安装塔科夫的情况下快速跳过SP
 
 - 跳过SPT安装包/启动器的游戏安装验证
 
+## 与其他拥有相同/类似功能工具的区别
+
+我们将直接修补SPT启动器
+
+- 这样不再会在您的电脑中留下多余的文件
+- 不再需要“也许是危险的”权限去修改您的注册表
+- 即便您日后希望安装在线版EFT，这么做可以将您为了SPT造成的文件、注册表残留减少
+
 ## 如何使用?
 
 ### 方式1
-1.以管理员身份运行SPT_Fuyu.exe
+1.将SPT.Fuyu.Patcher.exe放到SPT启动器所在的文件夹
 
-2.SPT Fuyu会自动完成验证步骤,验证文件将存放在用户文档文件夹下
+2.双击运行SPT.Fuyu.Patcher.exe，SPT Fuyu会自动完成修补步骤
 
 ### 方式2
-1.在您希望的位置创建一个文件夹用于存放验证文件
+1.将SPT启动器文件（也就是SPT.Launcher.exe）拖拽到SPT.Fuyu.Patcher.exe
 
-2.将上一步创建的文件夹拖入EXE，如果你更习惯使用CLI操作方式，只需将文件夹目录传参
-
-3.SPT Fuyu会自动完成验证步骤
-
-### 方式3
-1.将程序存放在您希望用于存放验证文件的位置
-
-2.执行程序时传入指令 "--here" (例如"./SPT_Fuyu.exe --here")
-
-3.SPT Fuyu会自动完成验证步骤
+2.SPT Fuyu会自动完成修补步骤
 
 <!--[![How to Use](https://res.cloudinary.com/marcomontalbano/image/upload/v1729199697/video_to_markdown/images/youtube--N-wXnwR-FiY-c05b58ac6eb4c4700831b2b3070cd403.jpg)](https://www.youtube.com/watch?v=N-wXnwR-FiY "How to Use")-->
-
-### 附注
-SPT Fuyu会在运行时检查是否已通过SPT正版验证，如果您已经安装在线版逃离塔科夫，请不要执行本程序（您也没有必要通过本程序进行正版验证）
 
 
 ## 致谢

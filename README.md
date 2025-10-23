@@ -19,32 +19,27 @@ last tested in SPT 4.0.1
 
 - bypass EFT install validate of SPT Installer & Launcher
 
+## Differences from other tools with the same/similar functionality
+
+We patch the SPT launcher directly
+
+- This eliminates the need for unnecessary files on your computer
+- No longer requires potentially dangerous registry modifications
+- Even if you later decide to install the live version of EFT, this minimizes the amount of files and registry artifacts left behind while using SPT.
+
 ## How to use?
 
-### method 1
-1.Run SPT_Fuyu.exe as administrator
+### Method 1
+1. Place SPT.Fuyu.Patcher.exe in the same folder as the SPT Launcher.
 
-2.SPT Fuyu automatically performs the steps required for verification, the files required for verification would be stored under Documents path
+2. Double-click SPT.Fuyu.Patcher.exe to run it. SPT Fuyu will automatically complete the patching process.
 
-### method 2
-1.Create a folder in the location you want to store the files required for verification
+### Method 2
+1. Drag the SPT Launcher file (i.e., SPT.Launcher.exe) onto SPT.Fuyu.Patcher.exe.
 
-2.Drag the folder created in the previous step onto the exe. If you're more comfortable using the CLI, just execute the exe in the terminal and pass in the path to the file.
-
-3.SPT Fuyu automatically performs the steps required for verification
-
-### method 3
-1.Put the exe at path that want to store the files required for verification
-
-2.Execute SPT Fuyu with command "--here" (ex. "./SPT_Fuyu.exe --here")
-
-3.SPT Fuyu automatically performs the steps required for verification
+2. SPT Fuyu will automatically complete the patching process.
 
 <!--[![How to Use](https://res.cloudinary.com/marcomontalbano/image/upload/v1729199697/video_to_markdown/images/youtube--N-wXnwR-FiY-c05b58ac6eb4c4700831b2b3070cd403.jpg)](https://www.youtube.com/watch?v=N-wXnwR-FiY "How to Use")-->
-
-### addition
-
-SPT Fuyu will check if you already passed SPT's EFT live verification. If you already installed EFT live version, do not using SPY Fuyu to bypass the verification (and actually you do not have to).
 
 ## Credits
 
