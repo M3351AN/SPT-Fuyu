@@ -87,15 +87,18 @@ ReadFile(const std::string& filename) {
   return buffer;
 }
 
-bool WriteFile(const std::string& filename,
-  const std::span<const unsigned char>data) {
-  std::ofstream file(filename, std::ios::binary | std::ios::trunc);
-  if (!file) {
-    return false;
-  }
+bool WriteFile(const std::string& filename, const std::span<const unsigned char> data) {
+  const HANDLE file_handle = CreateFileA(filename.c_str(), GENERIC_WRITE, 0, NULL,
+                            CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+  if (file_handle == INVALID_HANDLE_VALUE) return false;
 
-  return file.write(reinterpret_cast<const char*>(data.data()),
-    data.size()).good();
+  DWORD bytes_written;
+  const BOOL result = WriteFile(file_handle, data.data(),
+                         static_cast<DWORD>(data.size()),
+                         &bytes_written, NULL);
+
+  CloseHandle(file_handle);
+  return result && (bytes_written == data.size());
 }
 
 std::expected<void, FileError> ModifyFile(const std::string& filename) {
