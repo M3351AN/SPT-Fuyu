@@ -51,18 +51,37 @@ enum class FileError {
 
 std::expected<std::vector<unsigned char>, FileError>
 ReadFile(const std::string& filename) {
-  std::ifstream file(filename, std::ios::binary | std::ios::ate);
-  if (!file) {
+  const HANDLE file_handle = CreateFileA(filename.c_str(), GENERIC_READ, FILE_SHARE_READ,
+                            NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+  if (file_handle == INVALID_HANDLE_VALUE) {
     return std::unexpected(FileError::FileNotFound);
   }
 
-  const auto size = file.tellg();
-  file.seekg(0, std::ios::beg);
-
-  std::vector<unsigned char> buffer(size);
-  if (!file.read(reinterpret_cast<char*>(buffer.data()), size)) {
+  const DWORD file_size = GetFileSize(file_handle, NULL);
+  if (file_size == INVALID_FILE_SIZE) {
+    CloseHandle(file_handle);
     return std::unexpected(FileError::ReadError);
   }
+
+  const HANDLE mapping_handle = CreateFileMapping(file_handle, NULL, PAGE_READONLY, 0, 0, NULL);
+  if (!mapping_handle) {
+    CloseHandle(file_handle);
+    return std::unexpected(FileError::ReadError);
+  }
+
+  const LPVOID file_data = MapViewOfFile(mapping_handle, FILE_MAP_READ, 0, 0, 0);
+  if (!file_data) {
+    CloseHandle(mapping_handle);
+    CloseHandle(file_handle);
+    return std::unexpected(FileError::ReadError);
+  }
+  
+  std::vector<unsigned char> buffer(file_size);
+  memcpy(buffer.data(), file_data, file_size);
+
+  UnmapViewOfFile(file_data);
+  CloseHandle(mapping_handle);
+  CloseHandle(file_handle);
 
   return buffer;
 }
@@ -85,7 +104,7 @@ std::expected<void, FileError> ModifyFile(const std::string& filename) {
   }
 
   auto data_span = std::span{*buffer};
-  auto it =
+  const auto it =
     std::ranges::search(data_span, build::kPattern).begin();
 
   if (it == data_span.end()) {
@@ -103,7 +122,7 @@ std::expected<void, FileError> ModifyFile(const std::string& filename) {
 }
 
 bool IsChineseLanguage() {
-  LANGID langId = GetUserDefaultUILanguage();
+  const LANGID langId = GetUserDefaultUILanguage();
   return (langId == 0x0804 || langId == 0x0404);  // 简体中文或繁体中文
 }
 
