@@ -25,6 +25,7 @@
 #include <format>
 #include <filesystem>
 #include <array>
+#include <execution>
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 namespace build {
@@ -105,7 +106,9 @@ std::expected<void, FileError> ModifyFile(const std::string& filename) {
 
   auto data_span = std::span{*buffer};
   const auto it =
-    std::ranges::search(data_span, build::kPattern).begin();
+    std::search(std::execution::par_unseq,
+                        data_span.begin(), data_span.end(),
+                        build::kPattern.begin(), build::kPattern.end());
 
   if (it == data_span.end()) {
     return std::unexpected(FileError::PatternNotFound);
