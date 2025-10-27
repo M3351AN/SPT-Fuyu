@@ -16,7 +16,6 @@
 //
 // -----------------------------------------------------------------------------
 #include <iostream>
-#include <fstream>
 #include <vector>
 #include <string>
 #include <algorithm>
@@ -52,8 +51,9 @@ enum class FileError {
 
 std::expected<std::vector<unsigned char>, FileError>
 ReadFile(const std::string& filename) {
-  const HANDLE file_handle = CreateFileA(filename.c_str(), GENERIC_READ, FILE_SHARE_READ,
-                            NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+  const HANDLE file_handle = CreateFileA(filename.c_str(), GENERIC_READ,
+                              FILE_SHARE_READ, NULL, OPEN_EXISTING,
+                              FILE_ATTRIBUTE_NORMAL, NULL);
   if (file_handle == INVALID_HANDLE_VALUE) {
     return std::unexpected(FileError::FileNotFound);
   }
@@ -64,19 +64,21 @@ ReadFile(const std::string& filename) {
     return std::unexpected(FileError::ReadError);
   }
 
-  const HANDLE mapping_handle = CreateFileMapping(file_handle, NULL, PAGE_READONLY, 0, 0, NULL);
+  const HANDLE mapping_handle = CreateFileMapping(file_handle, NULL,
+                                  PAGE_READONLY, 0, 0, NULL);
   if (!mapping_handle) {
     CloseHandle(file_handle);
     return std::unexpected(FileError::ReadError);
   }
 
-  const LPVOID file_data = MapViewOfFile(mapping_handle, FILE_MAP_READ, 0, 0, 0);
+  const LPVOID file_data = MapViewOfFile(mapping_handle, FILE_MAP_READ,
+                            0, 0, 0);
   if (!file_data) {
     CloseHandle(mapping_handle);
     CloseHandle(file_handle);
     return std::unexpected(FileError::ReadError);
   }
-  
+
   std::vector<unsigned char> buffer(file_size);
   memcpy(buffer.data(), file_data, file_size);
 
@@ -87,8 +89,10 @@ ReadFile(const std::string& filename) {
   return buffer;
 }
 
-bool WriteFile(const std::string& filename, const std::span<const unsigned char> data) {
-  const HANDLE file_handle = CreateFileA(filename.c_str(), GENERIC_WRITE, 0, NULL,
+bool WriteFile(const std::string& filename,
+               const std::span<const unsigned char> data) {
+  const HANDLE file_handle = CreateFileA(filename.c_str(),
+                            GENERIC_WRITE, 0, NULL,
                             CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
   if (file_handle == INVALID_HANDLE_VALUE) return false;
 
