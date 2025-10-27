@@ -9,7 +9,7 @@
 // -----------------------------------------------------------------------------
 // File: spt_fuyu_patcher.cc
 // Author: 渟雲(quq[at]outlook.it)
-// Date: 2025-10-23
+// Date: 2025-10-28
 //
 // Description:
 //   This file includes functions of SPT Fuyu Patcher
