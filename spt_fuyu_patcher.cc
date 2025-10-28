@@ -46,7 +46,8 @@ enum class FileError {
   PermissionDenied,
   ReadError,
   WriteError,
-  PatternNotFound
+  PatternNotFound,
+  PatchedPatternFound
 };
 
 std::expected<std::vector<unsigned char>, FileError>
@@ -118,6 +119,13 @@ std::expected<void, FileError> ModifyFile(const std::string& filename) {
                         build::kPattern.begin(), build::kPattern.end());
 
   if (it == data_span.end()) {
+    const auto check_patched =
+  std::search(std::execution::par_unseq,
+                      data_span.begin(), data_span.end(),
+                      build::kReplacement.begin(), build::kReplacement.end());
+    if (check_patched != data_span.end()) {
+      return std::unexpected(FileError::PatchedPatternFound);
+    }
     return std::unexpected(FileError::PatternNotFound);
   }
 
@@ -193,10 +201,17 @@ int main(int argc, char* argv[]) {
       case FileError::PatternNotFound: {
           std::cout << (isChinese
                 ? "错误: 未找到目标字节序列 \n"
-                  "修补程序可能已经过时或您可能已经修补过启动器 \n"
+                  "修补程序可能已经过时 \n"
                 : "Error: Target byte pattern not found. \n"
-                  "Patcher might outdated "
-                  "or you have already patched the launcher. \n");
+                  "Patcher might outdated. \n");
+          break;
+        }
+      case FileError::PatchedPatternFound: {
+          std::cout << (isChinese
+                ? "错误: 未找到目标字节序列 \n"
+                  "您可能已经修补过启动器 \n"
+                : "Error: Target byte pattern not found. \n"
+                  "You might have already patched the launcher. \n");
           break;
         }
       default: {
