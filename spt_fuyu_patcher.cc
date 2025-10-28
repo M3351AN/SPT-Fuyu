@@ -30,6 +30,7 @@
 namespace build {
 static constexpr std::string_view kFilename = "SPT.Launcher.exe";
 
+static constexpr std::string_view kExpectedProductName = "SPT.Launcher";
   // 要搜索的字节序列 Pattern to search for
 static constexpr std::array<unsigned char, 10> kPattern = {
   0x26, 0x15, 0x0B, 0xDE, 0x00, 0x07, 0x16, 0xFE, 0x01, 0x2A
@@ -47,7 +48,8 @@ enum class FileError {
   ReadError,
   WriteError,
   PatternNotFound,
-  PatchedPatternFound
+  PatchedPatternFound,
+  NotExecutable
 };
 
 std::expected<std::vector<unsigned char>, FileError>
@@ -110,6 +112,10 @@ std::expected<void, FileError> ModifyFile(const std::string& filename) {
   auto buffer = ReadFile(filename);
   if (!buffer) {
     return std::unexpected(buffer.error());
+  }
+
+  if (buffer->size() < 2 || (*buffer)[0] != 0x4D || (*buffer)[1] != 0x5A) {
+    return std::unexpected(FileError::NotExecutable);
   }
 
   auto data_span = std::span{*buffer};
@@ -210,6 +216,12 @@ int main(int argc, char* argv[]) {
                   "您可能已经修补过启动器 \n"
                 : "Error: Target byte pattern not found. \n"
                   "You might have already patched the launcher. \n");
+          break;
+        }
+      case FileError::NotExecutable: {
+          std::cout << (isChinese
+                ? "错误: 目标文件不是有效的可执行文件 \n"
+                : "Error: Target file is not a valid executable \n");
           break;
         }
       default: {
