@@ -151,10 +151,9 @@ int main(int argc, char* argv[]) {
   // 判断是否为中文语言 Determine if system language is Chinese
   bool isChinese = false;
   isChinese = IsChineseLanguage();
-  std::expected<void, FileError> result;
+  std::string target_filename;
   if (argc != 2) {
-    result =
-      ModifyFile(std::string(build::kFilename));
+    target_filename = build::kFilename;
   } else {
     if (!std::filesystem::exists(argv[1])) {
         std::cout << (isChinese
@@ -163,12 +162,11 @@ int main(int argc, char* argv[]) {
                           "The path you dragged in does not exist. \n");
       system("pause");
       return 1;
-    } else {
-      result =
-        ModifyFile(std::filesystem::path(argv[1]).string());
     }
+    target_filename = argv[1];
   }
-
+  std::expected<void, FileError> result =
+    ModifyFile(std::filesystem::path(target_filename).string());
 
   if (result) {
     std::cout <<
@@ -183,7 +181,7 @@ int main(int argc, char* argv[]) {
           std::cout << std::vformat((isChinese
               ? "错误: 未找到 '{}' 文件 \n"
               : "Error: File '{}' not found \n"),
-            std::make_format_args(build::kFilename));
+            std::make_format_args(target_filename));
           break;
         }
       case FileError::ReadError: {
