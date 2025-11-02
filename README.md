@@ -2,6 +2,7 @@
 [简体中文](README_CN.md)
 
 ## Download
+We recommend using our online version[SPT Fuyu Patcher Web](https://tkm.icu/SPT_Fuyu_Patcher_Web/)
 
 You can get the latest pre-built version in [Release](https://github.com/M3351AN/SPT-Fuyu/releases)
 
