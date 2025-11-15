@@ -22,7 +22,7 @@ Theoretically, it can sustain support for subsequent versions of the SPT client 
 
 ## Functions
 
-- bypass EFT install validate of SPT Installer & Launcher
+- bypass EFT install validate of SPT Launcher
 
 ## Differences from other tools with the same/similar functionality
 
