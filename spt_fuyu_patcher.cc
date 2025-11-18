@@ -40,6 +40,15 @@ static constexpr std::array<unsigned char, 10> kPattern = {
 static constexpr std::array<unsigned char, 10> kReplacement = {
   0x26, 0x15, 0x0B, 0xDE, 0x00, 0x16, 0x16, 0xFE, 0x01, 0x2A
 };
+  // 要搜索的字节序列 Pattern to search for
+static constexpr std::array<unsigned char, 10> kPatternNew = {
+  0xDE, 0x00, 0x11, 0x04, 0x16, 0xFE, 0x01, 0x2A
+};
+
+  // 用于替换的字符序列 Replacement bytes
+static constexpr std::array<unsigned char, 10> kReplacementNew = {
+  0xDE, 0x00, 0x00, 0x16, 0x16, 0xFE, 0x01, 0x2A
+};
 }  // namespace build
 
 enum class FileError {
@@ -119,23 +128,39 @@ std::expected<void, FileError> ModifyFile(const std::string& filename) {
   }
 
   auto data_span = std::span{*buffer};
-  const auto it =
-    std::search(std::execution::par_unseq,
+
+  auto it = std::search(std::execution::par_unseq,
                         data_span.begin(), data_span.end(),
                         build::kPattern.begin(), build::kPattern.end());
 
   if (it == data_span.end()) {
-    const auto check_patched =
-  std::search(std::execution::par_unseq,
-                      data_span.begin(), data_span.end(),
-                      build::kReplacement.begin(), build::kReplacement.end());
-    if (check_patched != data_span.end()) {
+    it = std::search(std::execution::par_unseq,
+                     data_span.begin(), data_span.end(),
+                     build::kPatternNew.begin(), build::kPatternNew.end());
+  }
+
+  if (it == data_span.end()) {
+    const auto check_patched1 =
+      std::search(std::execution::par_unseq,
+                  data_span.begin(), data_span.end(),
+                  build::kReplacement.begin(), build::kReplacement.end());
+
+    const auto check_patched2 =
+      std::search(std::execution::par_unseq,
+                  data_span.begin(), data_span.end(),
+                  build::kReplacementNew.begin(), build::kReplacementNew.end());
+
+    if (check_patched1 != data_span.end() || check_patched2 != data_span.end()) {
       return std::unexpected(FileError::PatchedPatternFound);
     }
     return std::unexpected(FileError::PatternNotFound);
   }
 
-  std::ranges::copy(build::kReplacement, it);
+  if (std::equal(build::kPattern.begin(), build::kPattern.end(), it)) {
+    std::ranges::copy(build::kReplacement, it);
+  } else {
+    std::ranges::copy(build::kReplacementNew, it);
+  }
 
   // 写回文件 Write back to file
   if (!WriteFile(filename, data_span)) {
