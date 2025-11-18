@@ -33,12 +33,12 @@ static constexpr std::string_view kFilename = "SPT.Launcher.exe";
 static constexpr std::string_view kExpectedProductName = "SPT.Launcher";
   // 要搜索的字节序列 Pattern to search for
 static constexpr std::array<unsigned char, 10> kPattern = {
-  0x26, 0x15, 0x0B, 0xDE, 0x00, 0x07, 0x16, 0xFE, 0x01, 0x2A
+  0x11, 0x04, 0x16, 0xFE, 0x01, 0x2A
 };
 
   // 用于替换的字符序列 Replacement bytes
 static constexpr std::array<unsigned char, 10> kReplacement = {
-  0x26, 0x15, 0x0B, 0xDE, 0x00, 0x16, 0x16, 0xFE, 0x01, 0x2A
+  0x11, 0x04, 0x16, 0xFE, 0x04, 0x2A
 };
   // 要搜索的字节序列 Pattern to search for
 static constexpr std::array<unsigned char, 10> kPatternNew = {
