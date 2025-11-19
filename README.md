@@ -1,7 +1,9 @@
 # SPT Fuyu
+
 [简体中文](README_CN.md)
 
 ## Download
+
 You can also use our web patcher version [SPT Fuyu Patcher Web](https://tkm.icu/SPT_Fuyu_Patcher_Web/), which is implemented based on the patching of the launcher executable file. Therefore, it may need to be updated after SPT launcher updated
 
 You can get the latest pre-built version in [Release](https://github.com/M3351AN/SPT-Fuyu/releases)
@@ -14,7 +16,7 @@ If you are in a region where Github is not accessible, you can download it throu
 
 *"People don't want to buy a quarter-inch drill. They want a quarter-inch hole!" -- Theodore Levitt*
 
-SPT Fuyu is a tool developed to quickly bypass EFT install validate of SPT while u have not install EFT from BSG
+SPT Fuyu is a tool developed to quickly bypass EFT install validate of SPT while u have not install EFT from BSG or Steam
 
 last tested in SPT 4.0.6
 
@@ -35,6 +37,7 @@ We hook the verification-related registry/file system Windows API during the run
 ## How to use?
 
 ### Method 1
+
 1. Place user32.dll in the folder where the SPT launcher is located
 
 2. Every time the SPT launcher is run, the SPT Fuyu will automatically complete the hooking setup
@@ -44,6 +47,7 @@ We hook the verification-related registry/file system Windows API during the run
 <img width="294" height="240" alt="image" src="https://github.com/user-attachments/assets/c6400cd4-ff42-4bb0-805f-6c7568f2ad1b" />
 
 ### Method 2 (for Debugging)
+
 1. Compile under Debug configuration
 
 2. Use any DLL mapper to map the generated DLL to the SPT launcher process
@@ -75,6 +79,7 @@ Profit
 [dll proxy generator](https://github.com/maluramichael/dll-proxy-generator)
 
 ## Declaration
+
 "SPT Fuyu" mentioned here refers only to this project and has nothing to do with any other projects, even if the names are the same or similar.
 
 SPT Fuyu is just a software that not affiliated with SPT / Battlestate Games Ltd. and any other project, organization, individual in any way.
