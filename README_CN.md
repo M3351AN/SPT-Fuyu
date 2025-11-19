@@ -24,84 +24,42 @@ SPT Fuyu 是一款用于在没有从BSG安装塔科夫的情况下快速跳过SP
 
 ## 与其他拥有相同/类似功能工具的区别
 
-我们将直接修补SPT启动器
+我们在SPT启动器运行时对验证相关的注册表/文件系统WindowsAPI进行挂钩
 
 - 这样不再会在您的电脑中留下多余的文件
 - 不再需要“也许是危险的”权限去修改您的注册表
 - 即便您日后希望安装在线版EFT，这么做可以将您为了SPT造成的文件、注册表残留减少
+- 从原理上，这可以更广泛的适应后续版本而无需更新
+- 只需要保持dll文件存在，无需在每次更新后手动修补
 
 ## 如何使用?
 
 ### 方式1
-1.将SPT.Fuyu.Patcher.exe放到SPT启动器所在的文件夹
+1.将user32.dll放到SPT启动器所在的文件夹
 
-2.双击运行SPT.Fuyu.Patcher.exe，SPT Fuyu会自动完成修补步骤
+2.运行SPT启动器，SPT Fuyu会自动完成挂钩步骤
 
-### 方式2
-1.将SPT启动器文件（也就是SPT.Launcher.exe）拖拽到SPT.Fuyu.Patcher.exe
+3.如果您发现SPT启动器的窗口标题变为“SPT.Fuyu.Launcher”，则说明挂钩步骤加载成功
 
-2.SPT Fuyu会自动完成修补步骤
+### 方式2（Debug用途）
+1.在Debug配置下编译
+
+2.使用任意DLL映射器将生成的DLL映射到SPT启动器进程
+
+3.SPT Fuyu会在注入后自动完成挂钩步骤
+
+4.如果您发现SPT启动器的窗口标题变为“SPT.Fuyu.Launcher”，则说明挂钩步骤加载成功
 
 <!--[![How to Use](https://res.cloudinary.com/marcomontalbano/image/upload/v1729199697/video_to_markdown/images/youtube--N-wXnwR-FiY-c05b58ac6eb4c4700831b2b3070cd403.jpg)](https://www.youtube.com/watch?v=N-wXnwR-FiY "How to Use")-->
 
 
 ## 这是怎么实现的？
 
-众所周知，SPT的启动器是一个基于.NET 9的程序，在较早的版本中（4.0.0 以前）基于.NET的更早版本。但它们的原理都是相同的。启动程序时，CLR会接管执行，然后通过JIT编译器，把IL转换成本机机器码。
+众所周知，在SPT启动器的验证函数中，通过检查注册表项目和对应文件是否存在来进行验证是否安装了在线版EFT
 
-而我们的修补则从IL入手。
+在传统的方法中（例如SPT Fuyu的1.0版本），我们通过创建对应的注册表项和占位文件来通过这一验证
 
-我们首先利用ILSpy工具找到验证函数的代码，它在这里（同样的[源码](https://github.com/sp-tarkov/launcher/blob/master/project/SPT.Launcher.Base/Helpers/ValidationUtil.cs)已经由SPT团队开源，可以看到几乎一致）
-
-<img width="1233" height="855" alt="image" src="https://github.com/user-attachments/assets/3d08890a-eba2-4bd8-b518-5a9ab924565f" />
-
-接着我们切换到IL视图，得到了这样的IL代码
-
-<img width="237" height="115" alt="image" src="https://github.com/user-attachments/assets/4398d50a-0dca-43fd-a0b3-5006904ef7b1" />
-
-它所对应的就是
-```
-07
-16
-FE 01
-2A
-```
-关键在于 `07` 和 `16` 这两个字节，在IL代码中，它们分别代表 ldloc.1 （加载局部变量1）和 ldc.i4.0（压入常量 0），它们组成了相等判断的两项.
-
-如果我们改为
-```
-16
-16
-FE 01
-2A
-```
-得到的就是
-
-<img width="224" height="127" alt="image" src="https://github.com/user-attachments/assets/04413daf-6fbf-4bbc-97b5-904c5a09719f" />
-
-显然，这永远返回“真”
-
-同理，改为
-```
-07
-07
-FE 01
-2A
-```
-
-<img width="256" height="129" alt="image" src="https://github.com/user-attachments/assets/58676453-0dd9-4076-b07e-60740e823a01" />
-
-这一样会永远返回真。
-
-接着就是定位这段字节序列所在的位置，只需要使用随意哪个二进制编辑器进行搜索，但如果直接搜索`07 16 FE 01 2A`我们会得到至少4个结果
-
-<img width="1201" height="126" alt="image" src="https://github.com/user-attachments/assets/1ee7e0bd-a4ec-403d-a6a8-ebcfe0acf586" />
-
-但与此同时，我们注意到在这段代码前还有`leave.s IL_00d4`语句
-
-<img width="467" height="371" alt="image" src="https://github.com/user-attachments/assets/67c93fec-c8ae-4e3a-bd35-eb5d84a653f6" />
-
-因此可以确定图中1C0B942位置，即`DE 00 07 16 FE 01 2A`对应的就是我们要找到的位置，保险起见我们取特征码到`26 15 0B DE 00 07 16 FE 01 2A`
+现在我们通过挂钩所使用的WindowsAPI，在挂钩函数中模拟存在对应的注册表项和文件来“欺骗”SPT启动器
 
 解决问题
 
@@ -111,6 +69,10 @@ FE 01
 [SPT Development Repo](https://dev.sp-tarkov.com/)
 
 [ILSpy](https://github.com/icsharpcode/ILSpy)
+
+[minhook](https://github.com/TsudaKageyu/minhook)
+
+[dll proxy generator](https://github.com/maluramichael/dll-proxy-generator)
 
 ## 声明
 此处所指的"SPT Fuyu"仅指代本项目，与其他任何项目无关，即便名字相同或类似
