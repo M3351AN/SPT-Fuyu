@@ -65,6 +65,34 @@ typedef struct _FILE_BASIC_INFORMATION {
   ULONG file_attributes;
 } FILE_BASIC_INFORMATION, *PFILE_BASIC_INFORMATION;
 
+typedef enum _FILE_INFO_BY_HANDLE_CLASS {
+  FileBasicInfo = 0,
+  FileStandardInfo = 1
+} FILE_INFO_BY_HANDLE_CLASS;
+
+typedef struct _FILE_STANDARD_INFO {
+  LARGE_INTEGER AllocationSize;
+  LARGE_INTEGER EndOfFile;
+  DWORD NumberOfLinks;
+  BOOLEAN DeletePending;
+  BOOLEAN Directory;
+} FILE_STANDARD_INFO, *PFILE_STANDARD_INFO;
+
+typedef struct _FILE_BASIC_INFO {
+  LARGE_INTEGER CreationTime;
+  LARGE_INTEGER LastAccessTime;
+  LARGE_INTEGER LastWriteTime;
+  LARGE_INTEGER ChangeTime;
+  DWORD FileAttributes;
+} FILE_BASIC_INFO, *PFILE_BASIC_INFO;
+
+typedef NTSTATUS(WINAPI* NtQueryDirectoryFileFunc)(
+    HANDLE FileHandle, HANDLE Event,
+    PVOID ApcRoutine,  // simplified
+    PVOID ApcContext, PVOID IoStatusBlock, PVOID FileInformation, ULONG Length,
+    ULONG FileInformationClass, BOOLEAN ReturnSingleEntry,
+    PUNICODE_STRING FileName, BOOLEAN RestartScan);
+
 typedef LSTATUS(WINAPI* RegOpenKeyExWFunc)(HKEY, LPCWSTR, DWORD, REGSAM, PHKEY);
 typedef LSTATUS(WINAPI* RegQueryValueExWFunc)(HKEY, LPCWSTR, LPDWORD, LPDWORD,
                                               LPBYTE, LPDWORD);
@@ -77,6 +105,14 @@ typedef BOOL(WINAPI* GetFileAttributesExWFunc)(
     LPVOID file_information);
 typedef NTSTATUS(WINAPI* NtQueryAttributesFileFunc)(POBJECT_ATTRIBUTES,
                                                     PFILE_BASIC_INFORMATION);
+typedef struct _CREATEFILE2_EXTENDED_PARAMETERS {
+  DWORD dwSize;
+  DWORD dwFileAttributes;
+  DWORD dwFileFlags;
+  DWORD dwSecurityQosFlags;
+  LPSECURITY_ATTRIBUTES lpSecurityAttributes;
+  HANDLE hTemplateFile;
+} CREATEFILE2_EXTENDED_PARAMETERS, *LPCREATEFILE2_EXTENDED_PARAMETERS;
 
 static RegOpenKeyExWFunc original_reg_open_key_ex_w = nullptr;
 static RegQueryValueExWFunc original_reg_query_value_ex_w = nullptr;
@@ -85,6 +121,11 @@ static CreateFileWFunc original_create_file_w = nullptr;
 static GetFileAttributesExWFunc original_get_file_attributes_ex_w = nullptr;
 static NtQueryAttributesFileFunc original_nt_query_attributes_file = nullptr;
 static BOOL(WINAPI* original_close_handle)(HANDLE) = nullptr;
+static HANDLE(WINAPI* original_create_file2)(
+    LPCWSTR, DWORD, DWORD, DWORD, LPCREATEFILE2_EXTENDED_PARAMETERS) = nullptr;
+static BOOL(WINAPI* original_get_file_information_by_handle_ex)(
+    HANDLE, FILE_INFO_BY_HANDLE_CLASS, LPVOID, DWORD) = nullptr;
+static NtQueryDirectoryFileFunc original_nt_query_directory_file = nullptr;
 
 struct VirtualFileMeta {
   LARGE_INTEGER size;
@@ -296,27 +337,134 @@ BOOL WINAPI HookedCloseHandle(HANDLE hObject) {
   return original_close_handle(hObject);
 }
 
-FARPROC GetOriginalFunction(const char* func_name) {
-  HMODULE module;
-
-  if (strstr(func_name, "RegOpenKey")) {
-    module = GetModuleHandleA("advapi32.dll");
-  } else if (strstr(func_name, "RegQueryValue")) {
-    module = GetModuleHandleA("advapi32.dll");
-  } else if (strstr(func_name, "RegCloseKey")) {
-    module = GetModuleHandleA("advapi32.dll");
-  } else if (strstr(func_name, "CreateFile")) {
-    module = GetModuleHandleA("kernel32.dll");
-  } else if (strstr(func_name, "GetFileAttributes")) {
-    module = GetModuleHandleA("kernel32.dll");
-  } else if (strstr(func_name, "NtQueryAttributesFile")) {
-    module = GetModuleHandleA("ntdll.dll");
-  } else {
-    module = GetModuleHandleA("kernel32.dll");
+HANDLE WINAPI HookedCreateFile2(LPCWSTR file_name, DWORD desired_access,
+                                DWORD share_mode, DWORD creation_disposition,
+                                LPCREATEFILE2_EXTENDED_PARAMETERS params) {
+  if (!IsVirtualPath(file_name)) {
+    return original_create_file2(file_name, desired_access, share_mode,
+                                 creation_disposition, params);
   }
 
-  return GetProcAddress(module, func_name);
+  if (IsVirtualDirectory(file_name)) {
+    HANDLE h = MakeVirtualFileHandle();
+    LARGE_INTEGER sz;
+    sz.QuadPart = 0;
+    g_file_meta[h] = {sz, FILE_ATTRIBUTE_DIRECTORY};
+    SetLastError(ERROR_SUCCESS);
+    return h;
+  }
+
+  if (IsVirtualFile(file_name)) {
+    HANDLE h = MakeVirtualFileHandle();
+    LARGE_INTEGER sz;
+    sz.QuadPart = 1024;
+    g_file_meta[h] = {sz, FILE_ATTRIBUTE_NORMAL};
+    SetLastError(ERROR_SUCCESS);
+    return h;
+  }
+
+  SetLastError(ERROR_FILE_NOT_FOUND);
+  return INVALID_HANDLE_VALUE;
 }
+
+BOOL WINAPI HookedGetFileInformationByHandleEx(
+    HANDLE hFile, FILE_INFO_BY_HANDLE_CLASS infoClass, LPVOID lpFileInformation,
+    DWORD dwBufferSize) {
+  auto it = g_file_meta.find(hFile);
+  if (it == g_file_meta.end()) {
+    return original_get_file_information_by_handle_ex(
+        hFile, infoClass, lpFileInformation, dwBufferSize);
+  }
+
+  const auto& meta = it->second;
+
+  if (infoClass == FileStandardInfo) {
+    if (dwBufferSize < sizeof(FILE_STANDARD_INFO)) {
+      SetLastError(ERROR_INSUFFICIENT_BUFFER);
+      return FALSE;
+    }
+    auto* stdinfo = reinterpret_cast<PFILE_STANDARD_INFO>(lpFileInformation);
+    stdinfo->AllocationSize = meta.size;
+    stdinfo->EndOfFile = meta.size;
+    stdinfo->NumberOfLinks = 1;
+    stdinfo->DeletePending = FALSE;
+    stdinfo->Directory = (meta.attrs & FILE_ATTRIBUTE_DIRECTORY) ? TRUE : FALSE;
+    return TRUE;
+  }
+
+  if (infoClass == FileBasicInfo) {
+    if (dwBufferSize < sizeof(FILE_BASIC_INFO)) {
+      SetLastError(ERROR_INSUFFICIENT_BUFFER);
+      return FALSE;
+    }
+    FILETIME ft;
+    GetSystemTimeAsFileTime(&ft);
+    LARGE_INTEGER t;
+    t.LowPart = static_cast<LONG>(ft.dwLowDateTime);
+    t.HighPart = static_cast<LONG>(ft.dwHighDateTime);
+
+    auto* binfo = reinterpret_cast<PFILE_BASIC_INFO>(lpFileInformation);
+    binfo->CreationTime = t;
+    binfo->LastAccessTime = t;
+    binfo->LastWriteTime = t;
+    binfo->ChangeTime = t;
+    binfo->FileAttributes = meta.attrs;
+    return TRUE;
+  }
+
+  return original_get_file_information_by_handle_ex(
+      hFile, infoClass, lpFileInformation, dwBufferSize);
+}
+
+NTSTATUS WINAPI HookedNtQueryDirectoryFile(
+    HANDLE FileHandle, HANDLE Event, PVOID ApcRoutine, PVOID ApcContext,
+    PVOID IoStatusBlock, PVOID FileInformation, ULONG Length,
+    ULONG FileInformationClass, BOOLEAN ReturnSingleEntry,
+    PUNICODE_STRING FileName, BOOLEAN RestartScan) {
+  auto it = g_file_meta.find(FileHandle);
+  if (it != g_file_meta.end() &&
+      (it->second.attrs & FILE_ATTRIBUTE_DIRECTORY)) {
+    return 0x80000006L;
+  }
+
+  return original_nt_query_directory_file(
+      FileHandle, Event, ApcRoutine, ApcContext, IoStatusBlock, FileInformation,
+      Length, FileInformationClass, ReturnSingleEntry, FileName, RestartScan);
+}
+
+FARPROC GetOriginalFunction(const char* func_name) {
+  auto load = [&](const char* dll) -> HMODULE {
+    HMODULE h = GetModuleHandleA(dll);
+    if (!h) h = LoadLibraryA(dll);
+    return h;
+  };
+  HMODULE module = nullptr;
+
+  if (strstr(func_name, "RegOpenKey") || strstr(func_name, "RegQueryValue") ||
+      strstr(func_name, "RegCloseKey")) {
+    module = load("advapi32.dll");
+  } else if (strstr(func_name, "Nt")) {
+    module = load("ntdll.dll");
+  } else if (strstr(func_name, "CreateFile2") ||
+             strstr(func_name, "CreateFile") ||
+             strstr(func_name, "GetFileInformationByHandleEx") ||
+             strstr(func_name, "GetFileAttributes") ||
+             strstr(func_name, "FindFirstFileExFromApp") ||
+             strstr(func_name, "FindFirstFileEx") ||
+             strstr(func_name, "FindFirstFile") ||
+             strstr(func_name, "FindNextFile") ||
+             strstr(func_name, "FindClose") ||
+             strstr(func_name, "CloseHandle")) {
+    module = load("KernelBase.dll");
+    if (!module) module = load("kernel32.dll");
+  } else {
+    module = load("KernelBase.dll");
+    if (!module) module = load("kernel32.dll");
+  }
+
+  return module ? GetProcAddress(module, func_name) : nullptr;
+}
+
 
 bool InstallHooks() {
   if (MH_Initialize() != MH_OK) {
@@ -333,6 +481,10 @@ bool InstallHooks() {
   FARPROC get_file_attributes_ex_w =
       GetOriginalFunction("GetFileAttributesExW");
   FARPROC close_handle = GetOriginalFunction("CloseHandle");
+  FARPROC create_file2 = GetOriginalFunction("CreateFile2");
+  FARPROC get_file_info_by_handle =
+      GetOriginalFunction("GetFileInformationByHandleEx");
+  FARPROC nt_query_directory_file = GetOriginalFunction("NtQueryDirectoryFile");
 
   if (MH_CreateHook(reg_open_key_ex_w, &HookedRegOpenKeyExW,
                     reinterpret_cast<LPVOID*>(&original_reg_open_key_ex_w)) !=
@@ -373,6 +525,24 @@ bool InstallHooks() {
   if (close_handle && MH_CreateHook(close_handle, &HookedCloseHandle,
                                     reinterpret_cast<LPVOID*>(
                                         &original_close_handle)) != MH_OK) {
+  }
+
+  if (create_file2 && MH_CreateHook(create_file2, &HookedCreateFile2,
+                                    reinterpret_cast<LPVOID*>(
+                                        &original_create_file2)) != MH_OK) {
+  }
+
+  if (get_file_info_by_handle &&
+      MH_CreateHook(
+          get_file_info_by_handle, &HookedGetFileInformationByHandleEx,
+          reinterpret_cast<LPVOID*>(
+              &original_get_file_information_by_handle_ex)) != MH_OK) {
+  }
+
+  if (nt_query_directory_file &&
+      MH_CreateHook(nt_query_directory_file, &HookedNtQueryDirectoryFile,
+                    reinterpret_cast<LPVOID*>(
+                        &original_nt_query_directory_file)) != MH_OK) {
   }
 
   if (MH_EnableHook(MH_ALL_HOOKS) != MH_OK) {
