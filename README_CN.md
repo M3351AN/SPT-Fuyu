@@ -2,7 +2,7 @@
 [English](README.md)
 
 ## 下载
-推荐使用我们的在线版本[SPT Fuyu Patcher Web](https://tkm.icu/SPT_Fuyu_Patcher_Web/)
+您也可以使用我们的在线修补器版本[SPT Fuyu Patcher Web](https://tkm.icu/SPT_Fuyu_Patcher_Web/)，它是基于修补启动器可执行文件实现的，因此可能在启动器更新后需要更新
 
 您可以在 [Release](https://github.com/M3351AN/SPT-Fuyu/releases) 页面获取预构建的版本
 
@@ -37,7 +37,7 @@ SPT Fuyu 是一款用于在没有从BSG安装塔科夫的情况下快速跳过SP
 ### 方式1
 1.将user32.dll放到SPT启动器所在的文件夹
 
-2.运行SPT启动器，SPT Fuyu会自动完成挂钩步骤
+2.每次运行SPT启动器，SPT Fuyu都会自动完成挂钩步骤
 
 3.如果您发现SPT启动器的窗口标题变为“SPT.Fuyu.Launcher”，则说明挂钩步骤加载成功
 

@@ -2,7 +2,7 @@
 [简体中文](README_CN.md)
 
 ## Download
-We recommend using our online version[SPT Fuyu Patcher Web](https://tkm.icu/SPT_Fuyu_Patcher_Web/)
+You can also use our web patcher version [SPT Fuyu Patcher Web](https://tkm.icu/SPT_Fuyu_Patcher_Web/), which is implemented based on the patching of the launcher executable file. Therefore, it may need to be updated after SPT launcher updated
 
 You can get the latest pre-built version in [Release](https://github.com/M3351AN/SPT-Fuyu/releases)
 
@@ -37,7 +37,7 @@ We hook the verification-related registry/file system Windows API during the run
 ### Method 1
 1. Place user32.dll in the folder where the SPT launcher is located
 
-2. Run the SPT launcher, and SPT Fuyu will automatically complete the hooking process
+2. Every time the SPT launcher is run, the SPT Fuyu will automatically complete the hooking setup
 
 3. If you notice that the window title of the SPT launcher has changed to "SPT.Fuyu.Launcher", it indicates that the hooking step has been successfully loaded
 
