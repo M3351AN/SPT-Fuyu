@@ -72,7 +72,6 @@ typedef LSTATUS(WINAPI* RegCloseKeyFunc)(HKEY);
 typedef HANDLE(WINAPI* CreateFileWFunc)(LPCWSTR, DWORD, DWORD,
                                         LPSECURITY_ATTRIBUTES, DWORD, DWORD,
                                         HANDLE);
-typedef DWORD(WINAPI* GetFileAttributesWFunc)(LPCWSTR file_name);
 typedef BOOL(WINAPI* GetFileAttributesExWFunc)(
     LPCWSTR file_name, GET_FILEEX_INFO_LEVELS info_level_id,
     LPVOID file_information);
@@ -83,9 +82,22 @@ static RegOpenKeyExWFunc original_reg_open_key_ex_w = nullptr;
 static RegQueryValueExWFunc original_reg_query_value_ex_w = nullptr;
 static RegCloseKeyFunc original_reg_close_key = nullptr;
 static CreateFileWFunc original_create_file_w = nullptr;
-static GetFileAttributesWFunc original_get_file_attributes_w = nullptr;
 static GetFileAttributesExWFunc original_get_file_attributes_ex_w = nullptr;
 static NtQueryAttributesFileFunc original_nt_query_attributes_file = nullptr;
+static BOOL(WINAPI* original_close_handle)(HANDLE) = nullptr;
+
+struct VirtualFileMeta {
+  LARGE_INTEGER size;
+  DWORD attrs;
+};
+
+static std::unordered_map<HANDLE, VirtualFileMeta> g_file_meta;
+static std::atomic<uint64_t> g_file_handle_seed{0xBEEF};
+
+static HANDLE MakeVirtualFileHandle() {
+  return reinterpret_cast<HANDLE>((g_file_handle_seed += 0x11));
+}
+
 
 static HKEY g_virtual_key = reinterpret_cast<HKEY>(0xDEADBEEF);
 
@@ -111,41 +123,30 @@ std::wstring NormalizePath(LPCWSTR path) {
 
 bool IsVirtualPath(LPCWSTR path) {
   if (!path) return false;
-  std::wstring file_path(path);
-  std::wstring lower_path = file_path;
-  std::transform(lower_path.begin(), lower_path.end(), lower_path.begin(),
-                 ::towlower);
-  std::wstring virtual_path_lower = build::kVirtualPath;
-  std::transform(virtual_path_lower.begin(), virtual_path_lower.end(),
-                 virtual_path_lower.begin(), ::towlower);
-  return lower_path.find(virtual_path_lower) != std::wstring::npos;
+  const std::wstring req = NormalizePath(path);
+  const std::wstring root = NormalizePath(build::kVirtualPath);
+  return req.rfind(root, 0) == 0;
 }
 
 bool IsVirtualDirectory(LPCWSTR path) {
   if (!path) return false;
-  std::wstring normalized_path = NormalizePath(path);
-  std::wstring virtual_path_lower = NormalizePath(build::kVirtualPath);
-  return normalized_path == virtual_path_lower;
+  const std::wstring req = NormalizePath(path);
+  const std::wstring root = NormalizePath(build::kVirtualPath);
+  return req == root;
 }
 
 bool IsVirtualFile(LPCWSTR file_name) {
   if (!file_name) return false;
+  const std::wstring req = NormalizePath(file_name);
+  const std::wstring root = NormalizePath(build::kVirtualPath);
 
-  std::wstring normalized_path = NormalizePath(file_name);
-  std::wstring virtual_path_lower = NormalizePath(build::kVirtualPath);
-
-  if (normalized_path == virtual_path_lower) {
-    return true;
-  }
+  if (req == root) return false;
 
   for (const auto& virtual_file : build::kVirtualFiles) {
-    std::wstring virtual_full_path =
-        virtual_path_lower + L"\\" + NormalizePath(virtual_file.c_str());
-    if (normalized_path == virtual_full_path) {
-      return true;
-    }
+    const std::wstring vf = NormalizePath(virtual_file.c_str());
+    const std::wstring full = root + L"\\" + vf;
+    if (req == full) return true;
   }
-
   return false;
 }
 
@@ -221,54 +222,43 @@ HANDLE WINAPI HookedCreateFileW(LPCWSTR file_name, DWORD desired_access,
                                 flags_and_attributes, template_file);
 }
 
-DWORD WINAPI HookedGetFileAttributesW(LPCWSTR file_name) {
-  if (IsVirtualPath(file_name)) {
-    if (IsVirtualFile(file_name)) {
-      if (IsVirtualDirectory(file_name)) {
-        return FILE_ATTRIBUTE_DIRECTORY;
-      } else {
-        return FILE_ATTRIBUTE_NORMAL;
-      }
-    } else {
-      SetLastError(ERROR_FILE_NOT_FOUND);
-      return INVALID_FILE_ATTRIBUTES;
-    }
-  }
-  return original_get_file_attributes_w(file_name);
-}
-
 BOOL WINAPI HookedGetFileAttributesExW(LPCWSTR file_name,
                                        GET_FILEEX_INFO_LEVELS info_level_id,
                                        LPVOID file_information) {
-  if (IsVirtualPath(file_name)) {
-    if (IsVirtualFile(file_name)) {
-      if (info_level_id == GetFileExInfoStandard && file_information) {
-        WIN32_FILE_ATTRIBUTE_DATA* attr_data =
-            reinterpret_cast<WIN32_FILE_ATTRIBUTE_DATA*>(file_information);
-
-        if (IsVirtualDirectory(file_name)) {
-          attr_data->dwFileAttributes = FILE_ATTRIBUTE_DIRECTORY;
-        } else {
-          attr_data->dwFileAttributes = FILE_ATTRIBUTE_NORMAL;
-        }
-
-        FILETIME file_time;
-        GetSystemTimeAsFileTime(&file_time);
-        attr_data->ftCreationTime = file_time;
-        attr_data->ftLastAccessTime = file_time;
-        attr_data->ftLastWriteTime = file_time;
-        attr_data->nFileSizeLow = 1024;
-        attr_data->nFileSizeHigh = 0;
-
-        return TRUE;
-      }
-    } else {
-      SetLastError(ERROR_FILE_NOT_FOUND);
-      return FALSE;
-    }
+  if (!IsVirtualPath(file_name)) {
+    return original_get_file_attributes_ex_w(file_name, info_level_id,
+                                             file_information);
   }
-  return original_get_file_attributes_ex_w(file_name, info_level_id,
-                                           file_information);
+  if (info_level_id != GetFileExInfoStandard || !file_information) {
+    SetLastError(ERROR_INVALID_PARAMETER);
+    return FALSE;
+  }
+
+  auto* attr = reinterpret_cast<WIN32_FILE_ATTRIBUTE_DATA*>(file_information);
+  FILETIME now;
+  GetSystemTimeAsFileTime(&now);
+  attr->ftCreationTime = now;
+  attr->ftLastAccessTime = now;
+  attr->ftLastWriteTime = now;
+
+  if (IsVirtualDirectory(file_name)) {
+    attr->dwFileAttributes = FILE_ATTRIBUTE_DIRECTORY;
+    attr->nFileSizeLow = 0;
+    attr->nFileSizeHigh = 0;
+    SetLastError(ERROR_SUCCESS);
+    return TRUE;
+  }
+
+  if (IsVirtualFile(file_name)) {
+    attr->dwFileAttributes = FILE_ATTRIBUTE_NORMAL;
+    attr->nFileSizeLow = 1024;
+    attr->nFileSizeHigh = 0;
+    SetLastError(ERROR_SUCCESS);
+    return TRUE;
+  }
+
+  SetLastError(ERROR_FILE_NOT_FOUND);
+  return FALSE;
 }
 
 NTSTATUS WINAPI
@@ -302,6 +292,22 @@ HookedNtQueryAttributesFile(POBJECT_ATTRIBUTES object_attributes,
     }
   }
   return original_nt_query_attributes_file(object_attributes, file_information);
+}
+
+BOOL WINAPI HookedCloseHandle(HANDLE hObject) {
+  auto it = g_file_meta.find(hObject);
+  if (it != g_file_meta.end()) {
+    g_file_meta.erase(it);
+    SetLastError(ERROR_SUCCESS);
+    return TRUE;
+  }
+
+  if (reinterpret_cast<uintptr_t>(hObject) == 0xCAFE1337) {
+    SetLastError(ERROR_SUCCESS);
+    return TRUE;
+  }
+
+  return original_close_handle(hObject);
 }
 
 FARPROC GetOriginalFunction(const char* func_name) {
@@ -338,9 +344,9 @@ bool InstallHooks() {
   FARPROC create_file_w = GetOriginalFunction("CreateFileW");
   FARPROC nt_query_attributes_file =
       GetOriginalFunction("NtQueryAttributesFile");
-  FARPROC get_file_attributes_w = GetOriginalFunction("GetFileAttributesW");
   FARPROC get_file_attributes_ex_w =
       GetOriginalFunction("GetFileAttributesExW");
+  FARPROC close_handle = GetOriginalFunction("CloseHandle");
 
   if (MH_CreateHook(reg_open_key_ex_w, &HookedRegOpenKeyExW,
                     reinterpret_cast<LPVOID*>(&original_reg_open_key_ex_w)) !=
@@ -372,16 +378,15 @@ bool InstallHooks() {
                         &original_nt_query_attributes_file)) != MH_OK) {
   }
 
-  if (get_file_attributes_w &&
-      MH_CreateHook(get_file_attributes_w, &HookedGetFileAttributesW,
-                    reinterpret_cast<LPVOID*>(
-                        &original_get_file_attributes_w)) != MH_OK) {
-  }
-
   if (get_file_attributes_ex_w &&
       MH_CreateHook(get_file_attributes_ex_w, &HookedGetFileAttributesExW,
                     reinterpret_cast<LPVOID*>(
                         &original_get_file_attributes_ex_w)) != MH_OK) {
+  }
+
+  if (close_handle && MH_CreateHook(close_handle, &HookedCloseHandle,
+                                    reinterpret_cast<LPVOID*>(
+                                        &original_close_handle)) != MH_OK) {
   }
 
   if (MH_EnableHook(MH_ALL_HOOKS) != MH_OK) {
