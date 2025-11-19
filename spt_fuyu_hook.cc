@@ -418,16 +418,15 @@ void ChangeWindowTitleWorker() {
 void ChangeWindowTitle() {
   std::thread(ChangeWindowTitleWorker).detach();
 }
-
 void InitializeWorker() {
   if (InstallHooks()) {
     ChangeWindowTitle();
   }
 }
 
-void Initialize() {
+void Initialize() { 
     std::thread(InitializeWorker).detach();
-
+}
 }  // namespace spt_fuyu
 
 #ifdef NDEBUG
