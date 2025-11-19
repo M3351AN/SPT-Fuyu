@@ -2,5 +2,5 @@
   <Configurations>
     <Platform Name="x64" />
   </Configurations>
-  <Project Path="SPT_HOOK.vcxproj" />
+  <Project Path="SPTFuyuHook.vcxproj" Id="628bfbdd-9e85-465e-ba3a-2cb847e58ca7" />
 </Solution>
