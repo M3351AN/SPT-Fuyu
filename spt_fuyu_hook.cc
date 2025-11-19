@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2025 渟雲. All rights reserved.
+// Copyright (c) 2025 渟雲. All rights reserved.
 //
 // Licensed under the TOSSRCU 2025.9 License (the "License");
 // you may not use this file except in compliance with the License.
@@ -418,6 +418,12 @@ void ChangeWindowTitleWorker() {
 void ChangeWindowTitle() {
   std::thread(ChangeWindowTitleWorker).detach();
 }
+void InitializeWorker() {
+  if (InstallHooks()) {
+    ChangeWindowTitle();
+  }
+}
+void Initialize() { std::thread(InitializeWorker).detach(); }
 }  // namespace spt_fuyu
 
 #ifdef NDEBUG
@@ -432,9 +438,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call,
       user32.dll = LoadLibraryA(path);
       setupFunctions();
       DisableThreadLibraryCalls(hModule);
-      if (spt_fuyu::InstallHooks()) {
-        spt_fuyu::ChangeWindowTitle();
-      }
+      spt_fuyu::Initialize();
       break;
     case DLL_PROCESS_DETACH:
       spt_fuyu::RemoveHooks();
