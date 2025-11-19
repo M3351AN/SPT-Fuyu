@@ -9,7 +9,7 @@
 // -----------------------------------------------------------------------------
 // File: spt_fuyu_patcher.cc
 // Author: 渟雲(quq[at]outlook.it)
-// Date: 2025-10-28
+// Date: 2025-11-19
 //
 // Description:
 //   This file includes functions of SPT Fuyu Patcher
@@ -27,28 +27,19 @@
 #include <execution>
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
+
 namespace build {
 static constexpr std::string_view kFilename = "SPT.Launcher.exe";
-
 static constexpr std::string_view kExpectedProductName = "SPT.Launcher";
-  // 要搜索的字节序列 Pattern to search for
-static constexpr std::array<unsigned char, 10> kPattern = {
-  0x26, 0x15, 0x0B, 0xDE, 0x00, 0x07, 0x16, 0xFE, 0x01, 0x2A
-};
 
-  // 用于替换的字符序列 Replacement bytes
-static constexpr std::array<unsigned char, 10> kReplacement = {
-  0x26, 0x15, 0x0B, 0xDE, 0x00, 0x16, 0x16, 0xFE, 0x01, 0x2A
-};
-  // 要搜索的字节序列 Pattern to search for
-static constexpr std::array<unsigned char, 10> kPatternNew = {
-  0xDE, 0x00, 0x11, 0x04, 0x16, 0xFE, 0x01, 0x2A
-};
+static constexpr std::string_view kSig1 = "26 15 0B DE 00 07 16 FE 01 2A";
+static constexpr std::string_view kRep1 = "26 15 0B DE 00 16 16 FE 01 2A";
 
-  // 用于替换的字符序列 Replacement bytes
-static constexpr std::array<unsigned char, 10> kReplacementNew = {
-  0xDE, 0x00, 0x00, 0x16, 0x16, 0xFE, 0x01, 0x2A
-};
+static constexpr std::string_view kSig2 = "DE 00 11 04 16 FE 01 2A";
+static constexpr std::string_view kRep2 = "DE 00 00 16 16 FE 01 2A";
+
+static constexpr std::string_view kSig3 = "DE 00 7E ?? ?? ?? ?? 16 FE 01 2A";
+static constexpr std::string_view kRep3 = "DE 00 7E ?? ?? ?? ?? 25 FE 01 2A";
 }  // namespace build
 
 enum class FileError {
@@ -60,6 +51,71 @@ enum class FileError {
   PatchedPatternFound,
   NotExecutable
 };
+
+std::vector<std::optional<uint8_t>> ParseBytePattern(std::string_view pattern) {
+  std::vector<std::optional<uint8_t>> bytes;
+
+  for (size_t i = 0; i < pattern.length(); ) {
+    if (pattern[i] == ' ') {
+      i++;
+      continue;
+    }
+
+    if (i + 1 < pattern.length() && pattern[i] == '?' && pattern[i + 1] == '?') {
+      bytes.push_back(std::nullopt);
+      i += 2;
+    } else if (i + 1 < pattern.length() &&
+               std::isxdigit(pattern[i]) &&
+               std::isxdigit(pattern[i + 1])) {
+      std::string byteStr = std::string{pattern[i]} + std::string{pattern[i + 1]};
+      bytes.push_back(static_cast<uint8_t>(std::stoi(byteStr, nullptr, 16)));
+      i += 2;
+    } else {
+      i++;
+    }
+  }
+
+  return bytes;
+}
+
+template<typename Iter>
+Iter SearchPattern(Iter begin, Iter end,
+                   const std::vector<std::optional<uint8_t>>& pattern) {
+  if (pattern.empty()) return end;
+
+  const size_t pattern_size = pattern.size();
+  const size_t data_size = std::distance(begin, end);
+
+  if (pattern_size > data_size) return end;
+
+  for (size_t i = 0; i <= data_size - pattern_size; ++i) {
+    bool found = true;
+
+    for (size_t j = 0; j < pattern_size; ++j) {
+      if (pattern[j].has_value() && *(begin + i + j) != pattern[j].value()) {
+        found = false;
+        break;
+      }
+    }
+
+    if (found) {
+      return begin + i;
+    }
+  }
+
+  return end;
+}
+
+void ApplyPatch(std::span<unsigned char> data,
+                size_t offset,
+                const std::vector<std::optional<uint8_t>>& original_pattern,
+                const std::vector<std::optional<uint8_t>>& replacement_pattern) {
+  for (size_t i = 0; i < replacement_pattern.size() && (offset + i) < data.size(); ++i) {
+    if (replacement_pattern[i].has_value()) {
+      data[offset + i] = replacement_pattern[i].value();
+    }
+  }
+}
 
 std::expected<std::vector<unsigned char>, FileError>
 ReadFile(const std::string& filename) {
@@ -129,40 +185,40 @@ std::expected<void, FileError> ModifyFile(const std::string& filename) {
 
   auto data_span = std::span{*buffer};
 
-  auto it = std::search(std::execution::par_unseq,
-                        data_span.begin(), data_span.end(),
-                        build::kPattern.begin(), build::kPattern.end());
+  auto sig1_pattern = ParseBytePattern(build::kSig1);
+  auto rep1_pattern = ParseBytePattern(build::kRep1);
+  auto sig2_pattern = ParseBytePattern(build::kSig2);
+  auto rep2_pattern = ParseBytePattern(build::kRep2);
+  auto sig3_pattern = ParseBytePattern(build::kSig3);
+  auto rep3_pattern = ParseBytePattern(build::kRep3);
 
-  if (it == data_span.end()) {
-    it = std::search(std::execution::par_unseq,
-                     data_span.begin(), data_span.end(),
-                     build::kPatternNew.begin(), build::kPatternNew.end());
+  auto check_patched1 = SearchPattern(data_span.begin(), data_span.end(), rep1_pattern);
+  auto check_patched2 = SearchPattern(data_span.begin(), data_span.end(), rep2_pattern);
+  auto check_patched3 = SearchPattern(data_span.begin(), data_span.end(), rep3_pattern);
+
+  if (check_patched1 != data_span.end() ||
+      check_patched2 != data_span.end() ||
+      check_patched3 != data_span.end()) {
+    return std::unexpected(FileError::PatchedPatternFound);
   }
 
-  if (it == data_span.end()) {
-    const auto check_patched1 =
-      std::search(std::execution::par_unseq,
-                  data_span.begin(), data_span.end(),
-                  build::kReplacement.begin(), build::kReplacement.end());
-
-    const auto check_patched2 =
-      std::search(std::execution::par_unseq,
-                  data_span.begin(), data_span.end(),
-                  build::kReplacementNew.begin(), build::kReplacementNew.end());
-
-    if (check_patched1 != data_span.end() || check_patched2 != data_span.end()) {
-      return std::unexpected(FileError::PatchedPatternFound);
-    }
-    return std::unexpected(FileError::PatternNotFound);
-  }
-
-  if (std::equal(build::kPattern.begin(), build::kPattern.end(), it)) {
-    std::ranges::copy(build::kReplacement, it);
+  auto it = SearchPattern(data_span.begin(), data_span.end(), sig1_pattern);
+  if (it != data_span.end()) {
+    ApplyPatch(data_span, std::distance(data_span.begin(), it), sig1_pattern, rep1_pattern);
   } else {
-    std::ranges::copy(build::kReplacementNew, it);
+    it = SearchPattern(data_span.begin(), data_span.end(), sig2_pattern);
+    if (it != data_span.end()) {
+      ApplyPatch(data_span, std::distance(data_span.begin(), it), sig2_pattern, rep2_pattern);
+    } else {
+      it = SearchPattern(data_span.begin(), data_span.end(), sig3_pattern);
+      if (it != data_span.end()) {
+        ApplyPatch(data_span, std::distance(data_span.begin(), it), sig3_pattern, rep3_pattern);
+      } else {
+        return std::unexpected(FileError::PatternNotFound);
+      }
+    }
   }
 
-  // 写回文件 Write back to file
   if (!WriteFile(filename, data_span)) {
     return std::unexpected(FileError::WriteError);
   }
@@ -183,6 +239,7 @@ int main(int argc, char* argv[]) {
   bool isChinese = false;
   isChinese = IsChineseLanguage();
   std::string target_filename;
+
   if (argc != 2) {
     target_filename = build::kFilename;
   } else {
@@ -196,12 +253,11 @@ int main(int argc, char* argv[]) {
     }
     target_filename = argv[1];
   }
-  std::expected<void, FileError> result =
-    ModifyFile(std::filesystem::path(target_filename).string());
+
+  std::expected<void, FileError> result = ModifyFile(target_filename);
 
   if (result) {
-    std::cout <<
-    (isChinese
+    std::cout << (isChinese
                 ? "已成功修补SPT启动器 \n"
                 : "SPT launcher patched successfully \n");
     system("pause");
