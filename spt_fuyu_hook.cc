@@ -139,16 +139,14 @@ bool IsVirtualFile(LPCWSTR file_name) {
   if (!file_name) return false;
   const std::wstring req = NormalizePath(file_name);
   const std::wstring root = NormalizePath(build::kVirtualPath);
-
   if (req == root) return false;
-
-  for (const auto& virtual_file : build::kVirtualFiles) {
-    const std::wstring vf = NormalizePath(virtual_file.c_str());
-    const std::wstring full = root + L"\\" + vf;
+  for (const auto& vf : build::kVirtualFiles) {
+    const std::wstring full = root + L"\\" + NormalizePath(vf.c_str());
     if (req == full) return true;
   }
   return false;
 }
+
 
 LSTATUS WINAPI HookedRegOpenKeyExW(HKEY key, LPCWSTR sub_key, DWORD options,
                                    REGSAM desired, PHKEY result) {
@@ -188,53 +186,49 @@ LSTATUS WINAPI HookedRegCloseKey(HKEY key) {
 }
 
 HANDLE WINAPI HookedCreateFileW(LPCWSTR file_name, DWORD desired_access,
-                                DWORD share_mode,
-                                LPSECURITY_ATTRIBUTES security_attributes,
+                                DWORD share_mode, LPSECURITY_ATTRIBUTES sa,
                                 DWORD creation_disposition,
                                 DWORD flags_and_attributes,
                                 HANDLE template_file) {
-  if (IsVirtualPath(file_name)) {
-    bool is_existence_check = false;
-
-    if (creation_disposition == OPEN_EXISTING ||
-        creation_disposition == CREATE_NEW ||
-        creation_disposition == TRUNCATE_EXISTING) {
-      is_existence_check = true;
-    }
-
-    if (is_existence_check) {
-      if (IsVirtualFile(file_name)) {
-        if ((desired_access &
-             (GENERIC_WRITE | FILE_WRITE_DATA | FILE_WRITE_ATTRIBUTES)) == 0) {
-          static HANDLE dummy_file = reinterpret_cast<HANDLE>(0xCAFE1337);
-          SetLastError(ERROR_SUCCESS);
-          return dummy_file;
-        }
-      } else {
-        SetLastError(ERROR_FILE_NOT_FOUND);
-        return INVALID_HANDLE_VALUE;
-      }
-    }
+  if (!IsVirtualPath(file_name)) {
+    return original_create_file_w(file_name, desired_access, share_mode, sa,
+                                  creation_disposition, flags_and_attributes,
+                                  template_file);
   }
 
-  return original_create_file_w(file_name, desired_access, share_mode,
-                                security_attributes, creation_disposition,
-                                flags_and_attributes, template_file);
+  if (IsVirtualDirectory(file_name)) {
+    HANDLE h = MakeVirtualFileHandle();
+    LARGE_INTEGER sz;
+    sz.QuadPart = 0;
+    g_file_meta[h] = {sz, FILE_ATTRIBUTE_DIRECTORY};
+    SetLastError(ERROR_SUCCESS);
+    return h;
+  }
+
+  if (IsVirtualFile(file_name)) {
+    HANDLE h = MakeVirtualFileHandle();
+    LARGE_INTEGER sz;
+    sz.QuadPart = 1024;
+    g_file_meta[h] = {sz, FILE_ATTRIBUTE_NORMAL};
+    SetLastError(ERROR_SUCCESS);
+    return h;
+  }
+
+  SetLastError(ERROR_FILE_NOT_FOUND);
+  return INVALID_HANDLE_VALUE;
 }
 
 BOOL WINAPI HookedGetFileAttributesExW(LPCWSTR file_name,
-                                       GET_FILEEX_INFO_LEVELS info_level_id,
-                                       LPVOID file_information) {
+                                       GET_FILEEX_INFO_LEVELS level,
+                                       LPVOID info) {
   if (!IsVirtualPath(file_name)) {
-    return original_get_file_attributes_ex_w(file_name, info_level_id,
-                                             file_information);
+    return original_get_file_attributes_ex_w(file_name, level, info);
   }
-  if (info_level_id != GetFileExInfoStandard || !file_information) {
+  if (level != GetFileExInfoStandard || !info) {
     SetLastError(ERROR_INVALID_PARAMETER);
     return FALSE;
   }
-
-  auto* attr = reinterpret_cast<WIN32_FILE_ATTRIBUTE_DATA*>(file_information);
+  auto* attr = reinterpret_cast<WIN32_FILE_ATTRIBUTE_DATA*>(info);
   FILETIME now;
   GetSystemTimeAsFileTime(&now);
   attr->ftCreationTime = now;
@@ -248,7 +242,6 @@ BOOL WINAPI HookedGetFileAttributesExW(LPCWSTR file_name,
     SetLastError(ERROR_SUCCESS);
     return TRUE;
   }
-
   if (IsVirtualFile(file_name)) {
     attr->dwFileAttributes = FILE_ATTRIBUTE_NORMAL;
     attr->nFileSizeLow = 1024;
@@ -256,7 +249,6 @@ BOOL WINAPI HookedGetFileAttributesExW(LPCWSTR file_name,
     SetLastError(ERROR_SUCCESS);
     return TRUE;
   }
-
   SetLastError(ERROR_FILE_NOT_FOUND);
   return FALSE;
 }
@@ -301,12 +293,6 @@ BOOL WINAPI HookedCloseHandle(HANDLE hObject) {
     SetLastError(ERROR_SUCCESS);
     return TRUE;
   }
-
-  if (reinterpret_cast<uintptr_t>(hObject) == 0xCAFE1337) {
-    SetLastError(ERROR_SUCCESS);
-    return TRUE;
-  }
-
   return original_close_handle(hObject);
 }
 
