@@ -41,6 +41,8 @@ We hook the verification-related registry/file system Windows API during the run
 
 3. If you notice that the window title of the SPT launcher has changed to "SPT.Fuyu.Launcher", it indicates that the hooking step has been successfully loaded
 
+<img width="294" height="240" alt="image" src="https://github.com/user-attachments/assets/c6400cd4-ff42-4bb0-805f-6c7568f2ad1b" />
+
 ### Method 2 (for Debugging)
 1. Compile under Debug configuration
 

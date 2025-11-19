@@ -41,6 +41,8 @@ SPT Fuyu 是一款用于在没有从BSG安装塔科夫的情况下快速跳过SP
 
 3.如果您发现SPT启动器的窗口标题变为“SPT.Fuyu.Launcher”，则说明挂钩步骤加载成功
 
+<img width="294" height="240" alt="image" src="https://github.com/user-attachments/assets/c6400cd4-ff42-4bb0-805f-6c7568f2ad1b" />
+
 ### 方式2（Debug用途）
 1.在Debug配置下编译
 
