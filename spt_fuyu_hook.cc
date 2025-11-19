@@ -99,6 +99,9 @@ std::wstring NormalizePath(LPCWSTR path) {
   if (!path) return L"";
   std::wstring result(path);
   std::transform(result.begin(), result.end(), result.begin(), ::towlower);
+  if (result.rfind(L"\\\\?\\", 0) == 0) {
+    result = result.substr(4);
+  }
   if (result.length() > 3 && result.back() == L'\\') {
     result.pop_back();
   }
