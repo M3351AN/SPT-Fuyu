@@ -23,6 +23,8 @@
 #include "./MinHook.h"
 
 namespace build {
+constexpr wchar_t kVirtualPath[] = L"A:\\SPTFuyuVirturalPath";
+
 constexpr wchar_t kTargetRegistryKey[] =
     L"Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\"
     L"EscapeFromTarkov";
@@ -30,12 +32,11 @@ constexpr wchar_t kTargetRegistryValue[] = L"InstallLocation";
 
 static const std::vector<std::wstring> kVirtualFiles = {
     L"BattlEye\\BEClient_x64.dll", L"ConsistencyInfo", L"Uninstall.exe",
-    L"UnityCrashHandler64.exe", L"WinPixEventRuntime.dll"};
+    L"UnityCrashHandler64.exe", L"WinPixEventRuntime.dll",
+    L"Escapefromtarkov.exe"};
 }  // namespace build
 
 namespace spt_fuyu {
-
-constexpr wchar_t kVirtualPath[] = L"A:\\SPTFuyuVirturalPath";
 
 typedef long NTSTATUS;
 constexpr NTSTATUS kStatusSuccess = 0x00000000L;
@@ -65,7 +66,6 @@ typedef struct _FILE_BASIC_INFORMATION {
 } FILE_BASIC_INFORMATION, *PFILE_BASIC_INFORMATION;
 
 typedef LSTATUS(WINAPI* RegOpenKeyExWFunc)(HKEY, LPCWSTR, DWORD, REGSAM, PHKEY);
-typedef LSTATUS(WINAPI* RegOpenKeyFunc)(HKEY, LPCWSTR, PHKEY);
 typedef LSTATUS(WINAPI* RegQueryValueExWFunc)(HKEY, LPCWSTR, LPDWORD, LPDWORD,
                                               LPBYTE, LPDWORD);
 typedef LSTATUS(WINAPI* RegCloseKeyFunc)(HKEY);
@@ -80,7 +80,6 @@ typedef NTSTATUS(WINAPI* NtQueryAttributesFileFunc)(POBJECT_ATTRIBUTES,
                                                     PFILE_BASIC_INFORMATION);
 
 static RegOpenKeyExWFunc original_reg_open_key_ex_w = nullptr;
-static RegOpenKeyFunc original_reg_open_key = nullptr;
 static RegQueryValueExWFunc original_reg_query_value_ex_w = nullptr;
 static RegCloseKeyFunc original_reg_close_key = nullptr;
 static CreateFileWFunc original_create_file_w = nullptr;
@@ -113,7 +112,7 @@ bool IsVirtualPath(LPCWSTR path) {
   std::wstring lower_path = file_path;
   std::transform(lower_path.begin(), lower_path.end(), lower_path.begin(),
                  ::towlower);
-  std::wstring virtual_path_lower = kVirtualPath;
+  std::wstring virtual_path_lower = build::kVirtualPath;
   std::transform(virtual_path_lower.begin(), virtual_path_lower.end(),
                  virtual_path_lower.begin(), ::towlower);
   return lower_path.find(virtual_path_lower) != std::wstring::npos;
@@ -122,7 +121,7 @@ bool IsVirtualPath(LPCWSTR path) {
 bool IsVirtualDirectory(LPCWSTR path) {
   if (!path) return false;
   std::wstring normalized_path = NormalizePath(path);
-  std::wstring virtual_path_lower = NormalizePath(kVirtualPath);
+  std::wstring virtual_path_lower = NormalizePath(build::kVirtualPath);
   return normalized_path == virtual_path_lower;
 }
 
@@ -130,7 +129,7 @@ bool IsVirtualFile(LPCWSTR file_name) {
   if (!file_name) return false;
 
   std::wstring normalized_path = NormalizePath(file_name);
-  std::wstring virtual_path_lower = NormalizePath(kVirtualPath);
+  std::wstring virtual_path_lower = NormalizePath(build::kVirtualPath);
 
   if (normalized_path == virtual_path_lower) {
     return true;
@@ -145,14 +144,6 @@ bool IsVirtualFile(LPCWSTR file_name) {
   }
 
   return false;
-}
-
-LSTATUS WINAPI HookedRegOpenKey(HKEY key, LPCWSTR sub_key, PHKEY result) {
-  if (IsTargetRegistryKey(key, sub_key)) {
-    *result = g_virtual_key;
-    return ERROR_SUCCESS;
-  }
-  return original_reg_open_key(key, sub_key, result);
 }
 
 LSTATUS WINAPI HookedRegOpenKeyExW(HKEY key, LPCWSTR sub_key, DWORD options,
@@ -170,14 +161,14 @@ LSTATUS WINAPI HookedRegQueryValueExW(HKEY key, LPCWSTR value_name,
   if (key == g_virtual_key && value_name &&
       wcscmp(value_name, build::kTargetRegistryValue) == 0) {
     if (data && data_size &&
-        *data_size >= (wcslen(kVirtualPath) + 1) * sizeof(wchar_t)) {
+        *data_size >= (wcslen(build::kVirtualPath) + 1) * sizeof(wchar_t)) {
       wcscpy_s(reinterpret_cast<wchar_t*>(data), *data_size / sizeof(wchar_t),
-               kVirtualPath);
+               build::kVirtualPath);
       if (type) *type = REG_SZ;
-      *data_size = (wcslen(kVirtualPath) + 1) * sizeof(wchar_t);
+      *data_size = (wcslen(build::kVirtualPath) + 1) * sizeof(wchar_t);
       return ERROR_SUCCESS;
     } else if (data_size) {
-      *data_size = (wcslen(kVirtualPath) + 1) * sizeof(wchar_t);
+      *data_size = (wcslen(build::kVirtualPath) + 1) * sizeof(wchar_t);
       return ERROR_MORE_DATA;
     }
   }
@@ -352,11 +343,6 @@ bool InstallHooks() {
                     reinterpret_cast<LPVOID*>(&original_reg_open_key_ex_w)) !=
       MH_OK) {
     return false;
-  }
-
-  if (reg_open_key && MH_CreateHook(reg_open_key, &HookedRegOpenKey,
-                                    reinterpret_cast<LPVOID*>(
-                                        &original_reg_open_key)) != MH_OK) {
   }
 
   if (MH_CreateHook(
