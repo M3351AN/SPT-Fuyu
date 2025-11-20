@@ -105,7 +105,15 @@ typedef BOOL(WINAPI* GetFileAttributesExWFunc)(LPCWSTR, GET_FILEEX_INFO_LEVELS,
                                                LPVOID);
 typedef NTSTATUS(WINAPI* NtQueryAttributesFileFunc)(POBJECT_ATTRIBUTES,
                                                     PFILE_BASIC_INFORMATION);
-
+typedef BOOL(WINAPI* VerQueryValueWFunc)(LPCVOID pBlock, LPCWSTR lpSubBlock,
+                                         LPVOID* lplpBuffer, PUINT puLen);
+typedef DWORD(WINAPI* GetFileVersionInfoSizeExWFunc)(DWORD dwFlags,
+                                                     LPCWSTR lptstrFilename,
+                                                     LPDWORD lpdwHandle);
+typedef BOOL(WINAPI* GetFileVersionInfoExWFunc)(DWORD dwFlags,
+                                                LPCWSTR lptstrFilename,
+                                                DWORD dwHandle, DWORD dwLen,
+                                                LPVOID lpData);
 // Original function pointers
 static RegOpenKeyExWFunc original_reg_open_key_ex_w = nullptr;
 static RegQueryValueExWFunc original_reg_query_value_ex_w = nullptr;
@@ -119,6 +127,10 @@ static HANDLE(WINAPI* original_create_file2)(LPCWSTR, DWORD, DWORD, DWORD,
 static BOOL(WINAPI* original_get_file_information_by_handle_ex)(
     HANDLE, FILE_INFO_BY_HANDLE_CLASS, LPVOID, DWORD) = nullptr;
 static NtQueryDirectoryFileFunc original_nt_query_directory_file = nullptr;
+static VerQueryValueWFunc original_ver_query_value_w = nullptr;
+static GetFileVersionInfoSizeExWFunc original_get_file_version_info_size_ex_w =
+    nullptr;
+static GetFileVersionInfoExWFunc original_get_file_version_info_ex_w = nullptr;
 
 struct VirtualFileMeta {
   LARGE_INTEGER size;
@@ -421,6 +433,45 @@ NTSTATUS WINAPI HookedNtQueryDirectoryFile(
       Length, FileInformationClass, ReturnSingleEntry, FileName, RestartScan);
 }
 
+BOOL WINAPI HookedVerQueryValueW(LPCVOID pBlock, LPCWSTR lpSubBlock,
+                                 LPVOID* lplpBuffer, PUINT puLen) {
+  if (lpSubBlock && wcsstr(lpSubBlock, L"ProductVersion")) {
+    static wchar_t fakeProduct[] = L"99.0.0.0";
+    *lplpBuffer = fakeProduct;
+    if (puLen) *puLen = (UINT)wcslen(fakeProduct);
+    return TRUE;
+  }
+  if (lpSubBlock && wcsstr(lpSubBlock, L"FileVersion")) {
+    static wchar_t fakeFile[] = L"99.0.0.0";
+    *lplpBuffer = fakeFile;
+    if (puLen) *puLen = (UINT)wcslen(fakeFile);
+    return TRUE;
+  }
+  return FALSE;
+}
+
+DWORD WINAPI HookedGetFileVersionInfoSizeExW(DWORD dwFlags,
+                                             LPCWSTR lptstrFilename,
+                                             LPDWORD lpdwHandle) {
+  if (VirtualFileSystem::IsVirtualFile(lptstrFilename)) {
+    if (lpdwHandle) *lpdwHandle = 0;
+    return 256;
+  }
+  return original_get_file_version_info_size_ex_w(dwFlags, lptstrFilename,
+                                                  lpdwHandle);
+}
+
+BOOL WINAPI HookedGetFileVersionInfoExW(DWORD dwFlags, LPCWSTR lptstrFilename,
+                                        DWORD dwHandle, DWORD dwLen,
+                                        LPVOID lpData) {
+  if (VirtualFileSystem::IsVirtualFile(lptstrFilename)) {
+    return TRUE;
+  }
+  return original_get_file_version_info_ex_w(dwFlags, lptstrFilename, dwHandle,
+                                             dwLen, lpData);
+}
+
+
 // Helper function to get original function addresses
 FARPROC GetOriginalFunction(const char* func_name) {
   auto load_module = [](const char* dll) -> HMODULE {
@@ -433,6 +484,9 @@ FARPROC GetOriginalFunction(const char* func_name) {
     dll_name = "advapi32.dll";
   } else if (strstr(func_name, "Nt")) {
     dll_name = "ntdll.dll";
+  } else if (strstr(func_name, "GetFileVersionInfo") ||
+             strstr(func_name, "VerQueryValue")) {
+    dll_name = "version.dll";
   }
 
   HMODULE module = load_module(dll_name);
@@ -488,7 +542,16 @@ bool InstallHooks() {
        reinterpret_cast<LPVOID>(&HookedGetFileInformationByHandleEx)},
       {"NtQueryDirectoryFile",
        reinterpret_cast<LPVOID*>(&original_nt_query_directory_file),
-       reinterpret_cast<LPVOID>(&HookedNtQueryDirectoryFile)}};
+       reinterpret_cast<LPVOID>(&HookedNtQueryDirectoryFile)},
+      {"VerQueryValueW", reinterpret_cast<LPVOID*>(&original_ver_query_value_w),
+       reinterpret_cast<LPVOID>(&HookedVerQueryValueW)},
+      {"GetFileVersionInfoSizeExW",
+       reinterpret_cast<LPVOID*>(&original_get_file_version_info_size_ex_w),
+       reinterpret_cast<LPVOID>(&HookedGetFileVersionInfoSizeExW)},
+      {"GetFileVersionInfoExW",
+       reinterpret_cast<LPVOID*>(&original_get_file_version_info_ex_w),
+       reinterpret_cast<LPVOID>(&HookedGetFileVersionInfoExW)},
+  };
 
   for (const auto& hook : hooks) {
     if (!InstallSingleHook(hook)) {
