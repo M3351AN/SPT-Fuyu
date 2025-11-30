@@ -18,7 +18,7 @@ If you are in a region where Github is not accessible, you can download it throu
 
 SPT Fuyu is a tool developed to quickly bypass EFT install validate of SPT while u have not install EFT from BSG or Steam
 
-last tested in SPT 4.0.6
+last tested in SPT 4.0.7
 
 ## Functions
 

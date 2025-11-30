@@ -9,7 +9,7 @@
 // -----------------------------------------------------------------------------
 // File: spt_fuyu_hook.cc
 // Author: 渟雲(quq[at]outlook.it)
-// Date: 2025-11-19
+// Date: 2025-11-30
 //
 // Description:
 //   This file includes functions of SPT Fuyu hooks.
@@ -35,6 +35,7 @@ static const std::vector<std::wstring> kVirtualFiles = {
     L"ConsistencyInfo",
     L"Uninstall.exe",
     L"UnityCrashHandler64.exe",
+    L"UnityPlayer.dll",
     L"WinPixEventRuntime.dll",
     L"Escapefromtarkov.exe"};
 }  // namespace build
@@ -542,15 +543,16 @@ bool InstallHooks() {
        reinterpret_cast<LPVOID>(&HookedGetFileInformationByHandleEx)},
       {"NtQueryDirectoryFile",
        reinterpret_cast<LPVOID*>(&original_nt_query_directory_file),
-       reinterpret_cast<LPVOID>(&HookedNtQueryDirectoryFile)},
-      {"VerQueryValueW", reinterpret_cast<LPVOID*>(&original_ver_query_value_w),
+       reinterpret_cast<LPVOID>(&HookedNtQueryDirectoryFile)} ,
+      /*{"VerQueryValueW",
+      reinterpret_cast<LPVOID*>(&original_ver_query_value_w),
        reinterpret_cast<LPVOID>(&HookedVerQueryValueW)},
       {"GetFileVersionInfoSizeExW",
        reinterpret_cast<LPVOID*>(&original_get_file_version_info_size_ex_w),
        reinterpret_cast<LPVOID>(&HookedGetFileVersionInfoSizeExW)},
       {"GetFileVersionInfoExW",
        reinterpret_cast<LPVOID*>(&original_get_file_version_info_ex_w),
-       reinterpret_cast<LPVOID>(&HookedGetFileVersionInfoExW)},
+       reinterpret_cast<LPVOID>(&HookedGetFileVersionInfoExW)},*/
   };
 
   for (const auto& hook : hooks) {
