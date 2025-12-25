@@ -1,4 +1,4 @@
-// Copyright (c) 2025 渟雲. All rights reserved.
+﻿// Copyright (c) 2025 渟雲. All rights reserved.
 //
 // Licensed under the TOSSRCU 2025.9 License (the "License");
 // you may not use this file except in compliance with the License.
@@ -37,7 +37,12 @@ static const std::vector<std::wstring> kVirtualFiles = {
     L"UnityCrashHandler64.exe",
     L"UnityPlayer.dll",
     L"WinPixEventRuntime.dll",
-    L"Escapefromtarkov.exe"};
+    L"Escapefromtarkov.exe",
+    L"EscapeFromTarkov_BE.exe",
+    L"baselib.dll",
+    L"GameAssembly.dll",
+    L"Logging.config"
+};
 }  // namespace build
 
 namespace spt_fuyu {
