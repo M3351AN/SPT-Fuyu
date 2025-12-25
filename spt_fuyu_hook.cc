@@ -23,7 +23,7 @@
 #include "./MinHook.h"
 
 namespace build {
-constexpr wchar_t kVirtualPath[] = L"A:\\SPTFuyuVirturalPath";
+constexpr wchar_t kVirtualPath[] = L"A:\\SPTFuyuVirtualPath";
 
 constexpr wchar_t kTargetRegistryKey[] =
     L"Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\"
