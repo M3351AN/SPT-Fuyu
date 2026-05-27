@@ -513,7 +513,8 @@ bool InstallSingleHook(const HookDefinition& hook) {
   FARPROC target = GetOriginalFunction(hook.name);
   if (!target) return true;  // Skip if function not found
 
-  return MH_CreateHook(target, hook.hook,
+  return MH_CreateHook(reinterpret_cast<LPVOID>(target),
+                       reinterpret_cast<LPVOID>(hook.hook),
                        reinterpret_cast<LPVOID*>(hook.original)) == MH_OK;
 }
 
