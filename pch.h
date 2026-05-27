@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #ifndef PCH_H
 #define PCH_H
@@ -7,6 +7,6 @@
 #define FILE_OPENED 1
 #endif
 
-#include "framework.h"
-
+#include "./include/framework.h"
+#include "./include/MinHook.h"
 #endif //PCH_H

@@ -20,7 +20,6 @@
 #ifdef NDEBUG
 #include "./dll_proxy.h"
 #endif
-#include "./MinHook.h"
 
 namespace build {
 constexpr wchar_t kVirtualPath[] = L"A:\\SPTFuyuVirtualPath";
