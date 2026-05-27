@@ -601,11 +601,6 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call,
   switch (ul_reason_for_call) {
     case DLL_PROCESS_ATTACH:
       DisableThreadLibraryCalls(hModule);
-#if defined(NDEBUG) && defined(_MSC_VER)
-      char path[MAX_PATH];
-      GetWindowsDirectoryA(path, sizeof(path));
-      strcat_s(path, "\\System32\\user32.dll");
-#endif
       spt_fuyu::Initialize();
       break;
 
