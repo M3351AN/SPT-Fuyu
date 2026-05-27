@@ -48,9 +48,9 @@
     <ClInclude Include="minhook\trampoline.h">
       <Filter>minhook</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="dll_proxy.h" />
+    <ClInclude Include="include\dll_proxy.h">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="include">

@@ -18,7 +18,7 @@
 
 #include "pch.h"
 #ifdef NDEBUG
-#include "./dll_proxy.h"
+#include "./include/dll_proxy.h"
 #endif
 
 namespace build {
