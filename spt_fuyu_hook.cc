@@ -9,7 +9,7 @@
 // -----------------------------------------------------------------------------
 // File: spt_fuyu_hook.cc
 // Author: 渟雲(quq[at]outlook.it)
-// Date: 2025-11-30
+// Date: 2026-5-28
 //
 // Description:
 //   This file includes functions of SPT Fuyu hooks.
@@ -605,17 +605,12 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call,
       char path[MAX_PATH];
       GetWindowsDirectoryA(path, sizeof(path));
       strcat_s(path, "\\System32\\user32.dll");
-      user32.dll = LoadLibraryA(path);
-      setupFunctions();
 #endif
       spt_fuyu::Initialize();
       break;
 
     case DLL_PROCESS_DETACH:
       spt_fuyu::RemoveHooks();
-#ifdef NDEBUG
-      FreeLibrary(user32.dll);
-#endif
       break;
   }
   return TRUE;
