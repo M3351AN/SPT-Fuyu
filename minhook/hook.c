@@ -912,6 +912,7 @@ MH_STATUS WINAPI MH_CreateHookApi(
 //-------------------------------------------------------------------------
 const char *WINAPI MH_StatusToString(MH_STATUS status)
 {
+#ifndef NDEBUG
 #define MH_ST2STR(x)    \
     case x:             \
         return #x;
@@ -934,6 +935,8 @@ const char *WINAPI MH_StatusToString(MH_STATUS status)
     }
 
 #undef MH_ST2STR
-
     return "(unknown)";
+#else
+    return "";
+#endif
 }
