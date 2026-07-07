@@ -12,7 +12,7 @@ If you are in a region where Github is not accessible, you can download it throu
 
 ## What is SPT Fuyu?
 
-![download](https://github.com/user-attachments/assets/f1ac2e38-3787-46f1-baf9-1dc885cc7066)
+![download](.github/icon.png)
 
 *"People don't want to buy a quarter-inch drill. They want a quarter-inch hole!" -- Theodore Levitt*
 
