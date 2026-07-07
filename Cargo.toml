@@ -1,0 +1,20 @@
+[package]
+name = "spt-fuyu"
+version = "4.0.0"
+edition = "2021"
+description = "SPT Fuyu - quickly bypass EFT install validate of SPT"
+
+[lib]
+name = "DWrite"
+crate-type = ["cdylib"]
+
+[dependencies]
+ilhook = "2"
+windows = { version = "0.62.2", features = ["Win32_Foundation", "Win32_System_SystemServices"] }
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"
