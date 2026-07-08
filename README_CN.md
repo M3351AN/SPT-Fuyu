@@ -74,9 +74,7 @@ SPT Fuyu 是一款用于在没有从BSG或Steam安装塔科夫的情况下快速
 
 [ILSpy](https://github.com/icsharpcode/ILSpy)
 
-[minhook](https://github.com/TsudaKageyu/minhook)
-
-[dll proxy generator](https://github.com/maluramichael/dll-proxy-generator)
+[ilhook](https://github.com/regomne/ilhook-rs)
 
 ## 声明
 

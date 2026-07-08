@@ -74,9 +74,7 @@ Profit
 
 [ILSpy](https://github.com/icsharpcode/ILSpy)
 
-[minhook](https://github.com/TsudaKageyu/minhook)
-
-[dll proxy generator](https://github.com/maluramichael/dll-proxy-generator)
+[ilhook](https://github.com/regomne/ilhook-rs)
 
 ## Declaration
 
