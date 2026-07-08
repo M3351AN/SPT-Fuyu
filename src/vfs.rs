@@ -148,7 +148,9 @@ pub fn normalize_path(path: &[u16]) -> Vec<u16> {
 
 static VIRTUAL_PATH: LazyLock<Vec<u16>> = LazyLock::new(|| to_wide("A:\\SPTFuyuVirtualPath"));
 static TARGET_REGISTRY_KEY: LazyLock<Vec<u16>> = LazyLock::new(|| {
-    to_wide("Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\EscapeFromTarkov")
+    to_wide(
+        "Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\EscapeFromTarkov",
+    )
 });
 static TARGET_REGISTRY_VALUE: LazyLock<Vec<u16>> = LazyLock::new(|| to_wide("InstallLocation"));
 
@@ -214,7 +216,9 @@ impl VirtualFileSystem {
         if normalized == NORMALIZED_VIRTUAL_PATH[..] {
             return false;
         }
-        NORMALIZED_VIRTUAL_FILES.iter().any(|f| &normalized[..] == &f[..])
+        NORMALIZED_VIRTUAL_FILES
+            .iter()
+            .any(|f| &normalized[..] == &f[..])
     }
 
     pub fn is_virtual_path_ptr(path: *const u16) -> bool {

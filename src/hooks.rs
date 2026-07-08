@@ -12,8 +12,7 @@ use crate::vfs::*;
 #[cfg(debug_assertions)]
 static REG_HOOK_LOGGED: AtomicBool = AtomicBool::new(false);
 
-type FnRegOpenKeyExW =
-    unsafe extern "system" fn(usize, *const u16, u32, u32, *mut usize) -> u32;
+type FnRegOpenKeyExW = unsafe extern "system" fn(usize, *const u16, u32, u32, *mut usize) -> u32;
 type FnRegQueryValueExW =
     unsafe extern "system" fn(usize, *const u16, *mut u32, *mut u32, *mut u8, *mut u32) -> u32;
 type FnRegCloseKey = unsafe extern "system" fn(usize) -> u32;
@@ -23,8 +22,7 @@ type FnGetFileAttributesExW = unsafe extern "system" fn(*const u16, u32, *mut c_
 type FnNtQueryAttributesFile =
     unsafe extern "system" fn(*const ObjectAttributes, *mut NtFileBasicInformation) -> i32;
 type FnCloseHandle = unsafe extern "system" fn(usize) -> i32;
-type FnCreateFile2 =
-    unsafe extern "system" fn(*const u16, u32, u32, u32, *const c_void) -> usize;
+type FnCreateFile2 = unsafe extern "system" fn(*const u16, u32, u32, u32, *const c_void) -> usize;
 type FnGetFileInformationByHandleEx =
     unsafe extern "system" fn(usize, u32, *mut c_void, u32) -> i32;
 type FnNtQueryDirectoryFile = unsafe extern "system" fn(
@@ -92,10 +90,7 @@ unsafe extern "win64" fn hook_reg_query_value_ex_w(
             let vp = VirtualFileSystem::virtual_path();
             let required_size = (vp.len() + 1) * 2;
 
-            if !data.is_null()
-                && !data_size.is_null()
-                && *data_size >= required_size as u32
-            {
+            if !data.is_null() && !data_size.is_null() && *data_size >= required_size as u32 {
                 ptr::copy_nonoverlapping(vp.as_ptr(), data as *mut u16, vp.len());
                 *(data as *mut u16).add(vp.len()) = 0;
                 if !ty.is_null() {
@@ -127,11 +122,7 @@ unsafe extern "win64" fn hook_reg_close_key(reg: *mut Registers, ori: usize, _: 
     }
 }
 
-unsafe extern "win64" fn hook_create_file_w(
-    reg: *mut Registers,
-    ori: usize,
-    _: usize,
-) -> usize {
+unsafe extern "win64" fn hook_create_file_w(reg: *mut Registers, ori: usize, _: usize) -> usize {
     unsafe {
         let file_name = (*reg).rcx as *const u16;
         let desired_access = (*reg).rdx as u32;
@@ -162,11 +153,7 @@ unsafe extern "win64" fn hook_create_file_w(
     }
 }
 
-unsafe extern "win64" fn hook_create_file2(
-    reg: *mut Registers,
-    ori: usize,
-    _: usize,
-) -> usize {
+unsafe extern "win64" fn hook_create_file2(reg: *mut Registers, ori: usize, _: usize) -> usize {
     unsafe {
         let file_name = (*reg).rcx as *const u16;
         let desired_access = (*reg).rdx as u32;
@@ -246,10 +233,8 @@ unsafe extern "win64" fn hook_nt_query_attributes_file(
 
         if !obj_attrs.is_null() && !(*obj_attrs).object_name.is_null() {
             let obj_name = &*(*obj_attrs).object_name;
-            let file_path = std::slice::from_raw_parts(
-                obj_name.buffer,
-                (obj_name.length / 2) as usize,
-            );
+            let file_path =
+                std::slice::from_raw_parts(obj_name.buffer, (obj_name.length / 2) as usize);
 
             if VirtualFileSystem::is_virtual_path(file_path) {
                 if !file_info.is_null() {
@@ -319,7 +304,11 @@ unsafe extern "win64" fn hook_get_file_information_by_handle_ex(
             si.end_of_file = size;
             si.number_of_links = 1;
             si.delete_pending = 0;
-            si.directory = if attrs & FILE_ATTRIBUTE_DIRECTORY != 0 { 1 } else { 0 };
+            si.directory = if attrs & FILE_ATTRIBUTE_DIRECTORY != 0 {
+                1
+            } else {
+                0
+            };
             return 1;
         }
 
@@ -399,11 +388,7 @@ unsafe fn get_module_handle_or_load(dll: &[u8]) -> Option<*mut c_void> {
             return Some(module);
         }
         let module = LoadLibraryA(dll.as_ptr());
-        if module.is_null() {
-            None
-        } else {
-            Some(module)
-        }
+        if module.is_null() { None } else { Some(module) }
     }
 }
 
