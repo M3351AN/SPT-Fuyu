@@ -5,7 +5,7 @@ pub(crate) mod enabled {
     use std::sync::{Mutex, OnceLock};
     use std::time::{SystemTime, UNIX_EPOCH};
 
-    extern "system" {
+    unsafe extern "system" {
         fn GetTempPathW(nBufferLength: u32, lpBuffer: *mut u16) -> u32;
     }
 

@@ -98,14 +98,16 @@ fn to_wide(s: &str) -> Vec<u16> {
 }
 
 pub unsafe fn wide_ptr_to_slice<'a>(ptr: *const u16) -> &'a [u16] {
-    if ptr.is_null() {
-        return &[];
+    unsafe {
+        if ptr.is_null() {
+            return &[];
+        }
+        let mut len = 0;
+        while *ptr.add(len) != 0 {
+            len += 1;
+        }
+        std::slice::from_raw_parts(ptr, len)
     }
-    let mut len = 0;
-    while *ptr.add(len) != 0 {
-        len += 1;
-    }
-    std::slice::from_raw_parts(ptr, len)
 }
 
 pub fn wide_eq_ptr(ptr: *const u16, s: &[u16]) -> bool {
@@ -286,7 +288,7 @@ impl VirtualFileSystem {
 
 pub static VFS: LazyLock<VirtualFileSystem> = LazyLock::new(VirtualFileSystem::new);
 
-extern "system" {
+unsafe extern "system" {
     fn GetSystemTimeAsFileTime(lpSystemTimeAsFileTime: *mut FileTime);
     fn SetLastError(error: u32);
 }
