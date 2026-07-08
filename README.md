@@ -12,7 +12,7 @@ If you are in a region where Github is not accessible, you can download it throu
 
 ## What is SPT Fuyu?
 
-![download](https://github.com/user-attachments/assets/f1ac2e38-3787-46f1-baf9-1dc885cc7066)
+![download](.github/icon-rusted.png)
 
 *"People don't want to buy a quarter-inch drill. They want a quarter-inch hole!" -- Theodore Levitt*
 
@@ -38,7 +38,7 @@ We hook the verification-related registry/file system Windows API during the run
 
 ### Method 1
 
-1. Place user32.dll in the folder where the SPT launcher is located
+1. Place DWrite.dll in the folder where the SPT launcher is located
 
 2. Every time the SPT launcher is run, the SPT Fuyu will automatically complete the hooking setup
 
@@ -84,4 +84,4 @@ SPT Fuyu is just a software that not affiliated with SPT / Battlestate Games Ltd
 
 This software is produced for educational purposes only and is not intended to promote cracked software or destroy other people's intellectual property rights.
 
-All content of SPT Fuyu is subject to the [TOSSRCU License](https://github.com/M3351AN/SPT-Fuyu/blob/main/LICENSE)
+All content of SPT Fuyu is subject to the [BSD-3-Clause License](https://github.com/M3351AN/SPT-Fuyu/blob/main/LICENSE.txt)
