@@ -26,7 +26,7 @@ SPT Fuyu 是一款用于在没有从BSG或Steam安装塔科夫的情况下快速
 
 ## 与其他拥有相同/类似功能工具的区别
 
-我们在SPT启动器运行时对验证相关的注册表/文件系统WindowsAPI进行挂钩
+我们在SPT启动器运行时挂钩.NET JIT编译器的`compileMethod`函数，将`SPT.Launcher.Helpers.ValidationUtil.Validate()`的IL代码替换为`ldc.i4.1; ret`，使其始终返回`true`
 
 - 这样不再会在您的电脑中留下多余的文件
 - 不再需要“也许是危险的”权限去修改您的注册表
@@ -60,13 +60,9 @@ SPT Fuyu 是一款用于在没有从BSG或Steam安装塔科夫的情况下快速
 
 ## 这是怎么实现的？
 
-众所周知，在SPT启动器的验证函数中，通过检查注册表项目和对应文件是否存在来进行验证是否安装了在线版EFT
+SPT启动器是一个.NET应用程序，其`SPT.Launcher.Helpers.ValidationUtil.Validate()`方法用于检查是否安装了在线版EFT
 
-在传统的方法中（例如SPT Fuyu的1.0版本），我们通过创建对应的注册表项和占位文件来通过这一验证
-
-现在我们通过挂钩所使用的WindowsAPI，在挂钩函数中模拟存在对应的注册表项和文件来“欺骗”SPT启动器
-
-解决问题
+我们通过`clrjit.dll`的`getJit()`虚函数表挂钩.NET JIT编译器的`compileMethod`函数。当JIT即将编译`Validate()`时，我们将其IL代码替换为`ldc.i4.1; ret`，使其始终返回`true`，从而完全绕过安装验证
 
 ## 致谢
 
