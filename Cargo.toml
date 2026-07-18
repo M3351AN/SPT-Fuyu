@@ -1,4 +1,4 @@
-[package]
+﻿[package]
 name = "spt-fuyu"
 version = "4.0.0"
 edition = "2024"
@@ -7,6 +7,9 @@ description = "SPT Fuyu - quickly bypass EFT install validate of SPT"
 [lib]
 name = "DWrite"
 crate-type = ["cdylib"]
+
+[lints.rust]
+non_snake_case = "allow"
 
 [dependencies]
 ilhook = "2"

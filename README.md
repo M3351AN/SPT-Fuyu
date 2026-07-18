@@ -26,7 +26,7 @@ last tested in SPT 4.0.13
 
 ## Differences from other tools with the same/similar functionality
 
-We hook the verification-related registry/file system Windows API during the runtime of the SPT launcher
+We hook the .NET JIT compiler's `compileMethod` during the runtime of the SPT launcher, replacing the IL of `SPT.Launcher.Helpers.ValidationUtil.Validate()` with `ldc.i4.1; ret` so it always returns `true`
 
 - This eliminates the need for unnecessary files on your computer
 - No longer requires potentially dangerous registry modifications
@@ -60,13 +60,9 @@ We hook the verification-related registry/file system Windows API during the run
 
 ## How is this made?
 
-As we all know, in the verification function of the SPT launcher, the installation of the online version of EFT is verified by checking whether the registry entries and corresponding files exist
+SPT Launcher is a .NET application. Its `SPT.Launcher.Helpers.ValidationUtil.Validate()` method checks whether the online version of EFT is installed
 
-In traditional methods (such as version 1.0 of SPT Fuyu), we pass this verification by creating corresponding registry entries and placeholder files
-
-Now we simulate the existence of corresponding registry entries and files in the hook function through the Windows API used by the hook to "trick" the SPT launcher
-
-Profit
+We hook the .NET JIT compiler's `compileMethod` function via `clrjit.dll`'s `getJit()` vtable. When the JIT is about to compile `Validate()`, we replace its IL code with `ldc.i4.1; ret`, making it always return `true` — bypassing the installation check entirely
 
 ## Credits
 
